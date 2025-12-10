@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apply · {{ job.title }}</title>
+  
+  <!-- Bootstrap 5.3.2 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <!-- Font Awesome 6.4.0 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    /* Modern Professional Application Form Styling */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #f8f9fa;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: #334155; line-height: 1.6;
+    }
+    .apply-container { max-width: 720px; margin: 0 auto; padding: 2rem 1rem; }
+
+    /* Hero Section */
+    .apply-hero {
+      background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+      border-radius: 20px; padding: 2.5rem 2rem; color: white; margin-bottom: 2rem;
+      box-shadow: 0 20px 60px rgba(30, 58, 138, 0.3); position: relative; overflow: hidden;
+    }
+    .apply-hero::before {
+      content: ''; position: absolute; top: -30%; right: -10%; width: 300px; height: 300px;
+      background: rgba(255, 255, 255, 0.05); border-radius: 50%; pointer-events: none;
+    }
+    .apply-hero-content { position: relative; z-index: 1; }
+    .apply-title { font-size: 2rem; font-weight: 800; margin-bottom: .75rem; line-height: 1.2; color: white; display: flex; align-items: center; gap: .75rem; }
+    .apply-title i { font-size: 2rem; opacity: .9; }
+    .apply-meta { display: flex; flex-direction: column; gap: .5rem; margin-top: 1rem; opacity: .95; }
+    .apply-meta-item { display: flex; align-items: center; gap: .5rem; font-size: .938rem; }
+    .apply-meta-item i { width: 20px; text-align: center; opacity: .9; }
+
+    /* Form Card */
+    .form-card { background: white; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,.08); padding: 2.5rem; margin-bottom: 2rem; }
+    .form-section-title { font-size: 1.25rem; font-weight: 700; color: #1e293b; margin-bottom: 1.5rem; display: flex; align-items: center; gap: .75rem; }
+    .form-section-title i {
+      font-size: 1.5rem; background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+
+    /* Inputs */
+    .form-group { margin-bottom: 1.5rem; }
+    .form-label { font-size: .938rem; font-weight: 600; color: #1e293b; margin-bottom: .5rem; display: flex; align-items: center; gap: .5rem; }
+    .form-label i { font-size: 1rem; color: #3b82f6; }
+    .form-label .required { color: #ef4444; font-weight: 700; }
+    .form-control-modern {
+      width: 100%; padding: .875rem 1rem; border: 2px solid #e5e7eb; border-radius: 12px;
+      font-size: 1rem; color: #334155; transition: all .3s ease; font-family: inherit;
+    }
+    .form-control-modern:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.1); }
+    .form-control-modern::placeholder { color: #94a3b8; }
+    textarea.form-control-modern { resize: vertical; min-height: 120px; }
+    .form-help { font-size: .813rem; color: #64748b; margin-top: .5rem; display: flex; align-items: center; gap: .375rem; }
+    .form-help i { font-size: .75rem; }
+
+    /* File Upload */
+    .file-upload-wrapper { position: relative; }
+    .file-upload-input {
+      position: relative; width: 100%; padding: 1.25rem; border: 2px dashed #cbd5e1; border-radius: 12px;
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); cursor: pointer; transition: all .3s ease; text-align: center;
+    }
+    .file-upload-input:hover { border-color: #3b82f6; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); }
+    .file-upload-input input[type="file"] { position: absolute; width: 100%; height: 100%; top: 0; left: 0; opacity: 0; cursor: pointer; }
+    .file-upload-label { display: flex; flex-direction: column; align-items: center; gap: .5rem; pointer-events: none; }
+    .file-upload-icon { font-size: 2rem; color: #3b82f6; }
+    .file-upload-text { font-weight: 600; color: #475569; }
+    .file-upload-subtext { font-size: .813rem; color: #64748b; }
+
+    /* Buttons */
+    .btn-submit {
+      background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; border: none; padding: 1rem 2rem;
+      border-radius: 14px; font-weight: 700; font-size: 1.125rem; display: flex; align-items: center; justify-content: center;
+      gap: .75rem; transition: all .3s ease; box-shadow: 0 8px 24px rgba(30,58,138,.25); cursor: pointer; width: 100%;
+    }
+    .btn-submit:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(30,58,138,.35); }
+    .btn-back {
+      background: white; color: #475569; border: 2px solid #e5e7eb; padding: .75rem 1.5rem; border-radius: 12px;
+      font-weight: 600; font-size: .938rem; display: inline-flex; align-items: center; gap: .5rem; transition: all .3s ease;
+      text-decoration: none; margin-bottom: 1rem;
+    }
+    .btn-back:hover { border-color: #3b82f6; color: #3b82f6; background: #f9fafb; transform: translateX(-3px); }
+
+    /* Applicant Info Card */
+    .applicant-info {
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 2px solid #93c5fd;
+      border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 2rem;
+    }
+    .applicant-info-title { font-size: .813rem; font-weight: 600; color: #1e40af; text-transform: uppercase; letter-spacing: .5px; margin-bottom: .5rem; display: flex; align-items: center; gap: .5rem; }
+    .applicant-info-content { font-size: 1rem; color: #1e3a8a; font-weight: 600; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .apply-hero { padding: 2rem 1.5rem; }
+      .apply-title { font-size: 1.5rem; }
+      .form-card { padding: 1.75rem; }
+      .form-section-title { font-size: 1.125rem; }
+      .btn-submit { font-size: 1rem; padding: .875rem 1.5rem; }
+    }
+
+    /* Animation */
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in-up { animation: fadeInUp .6s ease-out; animation-fill-mode: both; }
+    .stagger-1 { animation-delay: .1s; } .stagger-2 { animation-delay: .2s; }
+  </style>
+</head>
+<body>
+
+<div class="apply-container">
+  <!-- Back Button (fixed endpoint) -->
+  <a href="{{ url_for('public.job_public', job_id=job.id) }}" class="btn-back fade-in-up">
+    <i class="fas fa-arrow-left"></i>
+    Back to Job Details
+  </a>
+
+  <!-- Hero Section -->
+  <div class="apply-hero fade-in-up stagger-1">
+    <div class="apply-hero-content">
+      <h1 class="apply-title">
+        <i class="fas fa-file-signature"></i>
+        Apply for Position
+      </h1>
+      <div class="apply-meta">
+        <div class="apply-meta-item">
+          <i class="fas fa-briefcase"></i>
+          <strong>{{ job.title }}</strong>
+        </div>
+        {% if job.role_type %}
+        <div class="apply-meta-item">
+          <i class="fas fa-tag"></i>
+          {{ job.role_type }}
+        </div>
+        {% endif %}
+        {% if job.location %}
+        <div class="apply-meta-item">
+          <i class="fas fa-location-dot"></i>
+          {{ job.location }}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Applicant Info -->
+  {% if cand %}
+  <div class="applicant-info fade-in-up stagger-2">
+    <div class="applicant-info-title">
+      <i class="fas fa-user-circle"></i>
+      Applying as
+    </div>
+    <div class="applicant-info-content">
+      {{ cand.name or 'Candidate' }}
+      {% if cand.email %}
+        <span style="font-weight: 400; color: #1e40af;"> · {{ cand.email }}</span>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Application Form -->
+  <div class="form-card fade-in-up stagger-2">
+    <h2 class="form-section-title">
+      <i class="fas fa-paper-plane"></i>
+      Application Details
+    </h2>
+
+    <!-- POST action aligned to route: public.job_apply_post -->
+    <form method="post" action="{{ url_for('public.job_apply_post', job_id=job.id) }}" enctype="multipart/form-data">
+      <!-- CV Upload -->
+      <div class="form-group">
+        <label class="form-label">
+          <i class="fas fa-file-pdf"></i>
+          Upload Your CV
+          <span class="required">*</span>
+        </label>
+        <div class="file-upload-wrapper">
+          <div class="file-upload-input">
+            <input type="file" name="cv_file" accept=".pdf,.doc,.docx" required>
+            <div class="file-upload-label">
+              <div class="file-upload-icon">
+                <i class="fas fa-cloud-arrow-up"></i>
+              </div>
+              <div class="file-upload-text">Click to upload or drag and drop</div>
+              <div class="file-upload-subtext">PDF, DOC, or DOCX (Max 10MB)</div>
+            </div>
+          </div>
+        </div>
+        <div class="form-help">
+          <i class="fas fa-circle-info"></i>
+          Make sure your CV is up-to-date and clearly formatted
+        </div>
+      </div>
+
+      <!-- Cover Letter -->
+      <div class="form-group">
+        <label class="form-label">
+          <i class="fas fa-message"></i>
+          Cover Letter
+          <span style="color: #64748b; font-weight: 400; font-size: 0.813rem;">(Optional)</span>
+        </label>
+        <textarea 
+          name="cover_note" 
+          class="form-control-modern" 
+          rows="6" 
+          placeholder="Tell us why you're a great fit for this role...&#10;&#10;Share your relevant experience, skills, and what excites you about this opportunity."
+        ></textarea>
+        <div class="form-help">
+          <i class="fas fa-lightbulb"></i>
+          A personalized message can help your application stand out
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <button class="btn-submit" type="submit">
+        <i class="fas fa-paper-plane"></i>
+        Submit Application
+      </button>
+    </form>
+  </div>
+
+  <!-- Help Text -->
+  <div style="text-align: center; color: #64748b; font-size: 0.875rem; margin-top: 1rem;">
+    <i class="fas fa-shield-halved" style="color: #3b82f6;"></i>
+    Your information will be kept confidential and secure
+  </div>
+
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- File Upload Enhancement -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.querySelector('input[type="file"]');
+    const fileUploadDiv = document.querySelector('.file-upload-input');
+    const fileUploadLabel = document.querySelector('.file-upload-label');
+    
+    if (fileInput && fileUploadLabel) {
+      fileInput.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+          const fileName = this.files[0].name;
+          const fileSize = (this.files[0].size / 1024 / 1024).toFixed(2);
+          fileUploadLabel.innerHTML = `
+            <div class="file-upload-icon" style="color: #10b981;">
+              <i class="fas fa-circle-check"></i>
+            </div>
+            <div class="file-upload-text" style="color: #10b981;">File Selected</div>
+            <div class="file-upload-subtext">${fileName} (${fileSize} MB)</div>
+          `;
+          fileUploadDiv.style.borderColor = '#10b981';
+          fileUploadDiv.style.background = 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)';
+        }
+      });
+
+      fileUploadDiv.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.style.borderColor = '#3b82f6';
+        this.style.background = 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)';
+      });
+      fileUploadDiv.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        this.style.borderColor = '#cbd5e1';
+        this.style.background = 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)';
+      });
+      fileUploadDiv.addEventListener('drop', function(e) {
+        this.style.borderColor = '#cbd5e1';
+        this.style.background = 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)';
+      });
+    }
+  });
+</script>
+
+</body>
+</html>

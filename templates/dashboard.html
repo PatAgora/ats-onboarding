@@ -1,0 +1,824 @@
+{% extends "base.html" %}
+{% set hide_topbar = True %}
+
+{% block title %}Dashboard - Onboarding ATS{% endblock %}
+
+{% block head %}
+<style>
+    /* Modern Dashboard Styles */
+    .page-header {
+        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 16px;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 32px rgba(30, 58, 138, 0.15);
+        animation: fadeInDown 0.6s ease-out;
+    }
+
+    .page-header h1 {
+        margin: 0;
+        font-size: 2rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .page-header h1 i {
+        font-size: 2.5rem;
+        opacity: 0.9;
+    }
+
+    .page-subtitle {
+        margin: 0.5rem 0 0 0;
+        opacity: 0.95;
+        font-size: 1rem;
+    }
+
+    /* Modern KPI Cards */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .kpi-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.75rem;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(30, 58, 138, 0.1);
+        transition: all 0.3s ease;
+        animation: fadeInUp 0.6s ease-out;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%);
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.3s ease;
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(30, 58, 138, 0.15);
+    }
+
+    .kpi-card:hover::before {
+        transform: scaleX(1);
+    }
+
+    .kpi-card:nth-child(1) { animation-delay: 0.1s; }
+    .kpi-card:nth-child(2) { animation-delay: 0.2s; }
+    .kpi-card:nth-child(3) { animation-delay: 0.3s; }
+    .kpi-card:nth-child(4) { animation-delay: 0.4s; }
+
+    .kpi-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .kpi-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.75rem;
+        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        color: white;
+        box-shadow: 0 4px 12px rgba(30, 58, 138, 0.2);
+    }
+
+    .kpi-info {
+        flex: 1;
+    }
+
+    .kpi-label {
+        font-size: 0.875rem;
+        color: #64748b;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .kpi-value {
+        font-size: 2.25rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        line-height: 1;
+    }
+
+    .kpi-stats {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+    }
+
+    .kpi-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.375rem 0.75rem;
+        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+        color: #1e40af;
+        border-radius: 12px;
+        font-size: 0.813rem;
+        font-weight: 600;
+        border: 1px solid rgba(30, 58, 138, 0.1);
+    }
+
+    .kpi-chip i {
+        font-size: 0.75rem;
+    }
+
+    /* Modern Card Sections */
+    .dashboard-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.75rem;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(30, 58, 138, 0.1);
+        margin-bottom: 2rem;
+        animation: fadeInUp 0.6s ease-out;
+        height: 100%;
+    }
+
+    .dashboard-card.delay-1 { animation-delay: 0.5s; }
+    .dashboard-card.delay-2 { animation-delay: 0.6s; }
+    .dashboard-card.delay-3 { animation-delay: 0.7s; }
+    .dashboard-card.delay-4 { animation-delay: 0.8s; }
+
+    .card-header-custom {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #f1f5f9;
+    }
+
+    .card-title-custom {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .card-title-custom i {
+        font-size: 1.5rem;
+        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .card-badge {
+        padding: 0.375rem 0.875rem;
+        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+        color: #1e40af;
+        border-radius: 12px;
+        font-size: 0.813rem;
+        font-weight: 600;
+        border: 1px solid rgba(30, 58, 138, 0.1);
+    }
+
+    /* Modern Table Styles */
+    .modern-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .modern-table thead th {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        color: #475569;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+        padding: 1rem;
+        border-bottom: 2px solid #e2e8f0;
+        text-align: center;
+    }
+
+    .modern-table thead th:first-child {
+        text-align: left;
+        border-top-left-radius: 12px;
+    }
+
+    .modern-table thead th:last-child {
+        text-align: center;
+        border-top-right-radius: 12px;
+    }
+
+    .modern-table tbody tr {
+        transition: all 0.2s ease;
+    }
+
+    .modern-table tbody tr:hover {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        transform: scale(1.01);
+    }
+
+    .modern-table tbody td {
+        padding: 1rem;
+        border-bottom: 1px solid #f1f5f9;
+        color: #334155;
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    .modern-table tbody td:first-child {
+        text-align: left;
+        font-weight: 500;
+    }
+
+    .modern-table tbody td:last-child {
+        text-align: center;
+    }
+
+    .modern-table tbody tr:last-child td:first-child {
+        border-bottom-left-radius: 12px;
+    }
+
+    .modern-table tbody tr:last-child td:last-child {
+        border-bottom-right-radius: 12px;
+    }
+
+    /* Status Badges */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.375rem 0.875rem;
+        border-radius: 12px;
+        font-size: 0.813rem;
+        font-weight: 600;
+        border: 1px solid;
+    }
+
+    .status-badge.status-success {
+        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+        color: #065f46;
+        border-color: #10b981;
+    }
+
+    .status-badge.status-warning {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        color: #92400e;
+        border-color: #f59e0b;
+    }
+
+    .status-badge.status-secondary {
+        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+        color: #475569;
+        border-color: #94a3b8;
+    }
+
+    /* Action Buttons */
+    .btn-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        box-shadow: 0 2px 8px rgba(30, 58, 138, 0.2);
+    }
+
+    .btn-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
+        color: white;
+    }
+
+    .btn-action i {
+        font-size: 1rem;
+    }
+
+    /* Progress Bars */
+    .progress-card {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        border: 1px solid rgba(30, 58, 138, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .progress-card:hover {
+        transform: translateX(4px);
+        box-shadow: 0 4px 12px rgba(30, 58, 138, 0.1);
+    }
+
+    .progress-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+
+    .progress-title {
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 0.938rem;
+    }
+
+    .progress-percentage {
+        font-weight: 700;
+        font-size: 1rem;
+        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .progress-subtitle {
+        font-size: 0.813rem;
+        color: #64748b;
+        margin-bottom: 0.5rem;
+    }
+
+    .progress-bar-container {
+        height: 10px;
+        background: #e2e8f0;
+        border-radius: 10px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%);
+        border-radius: 10px;
+        transition: width 1s ease-out;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .progress-bar-fill::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+
+    /* Jobs List */
+    .jobs-list-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border-radius: 12px;
+        border: 1px solid rgba(30, 58, 138, 0.1);
+        margin-bottom: 0.75rem;
+        transition: all 0.3s ease;
+    }
+
+    .jobs-list-item:hover {
+        transform: translateX(4px);
+        box-shadow: 0 4px 12px rgba(30, 58, 138, 0.1);
+        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+        border-color: #3b82f6;
+    }
+
+    .job-item-content {
+        flex: 1;
+    }
+
+    .job-item-title {
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+    }
+
+    .job-item-meta {
+        font-size: 0.813rem;
+        color: #64748b;
+    }
+
+    .job-item-link {
+        color: #3b82f6;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .job-item-link:hover {
+        text-decoration: underline;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1.5rem;
+        color: #64748b;
+    }
+
+    .empty-state i {
+        font-size: 4rem;
+        color: #cbd5e1;
+        margin-bottom: 1rem;
+    }
+
+    .empty-state h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-state p {
+        font-size: 0.938rem;
+        margin: 0;
+    }
+
+    /* Animations */
+    @keyframes fadeInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .kpi-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .page-header h1 {
+            font-size: 1.5rem;
+        }
+
+        .page-header h1 i {
+            font-size: 1.75rem;
+        }
+
+        .kpi-value {
+            font-size: 1.75rem;
+        }
+
+        .card-header-custom {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .modern-table {
+            font-size: 0.875rem;
+        }
+
+        .modern-table thead th,
+        .modern-table tbody td {
+            padding: 0.75rem 0.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 pt-3 pb-4">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1>
+            <i class="fas fa-chart-line"></i>
+            Dashboard
+        </h1>
+        <p class="page-subtitle">Welcome back! Here's what's happening with your hiring process.</p>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+        <!-- Total Candidates -->
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <div class="kpi-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="kpi-info">
+                    <div class="kpi-label">Total Candidates</div>
+                    <div class="kpi-value">{{ total_candidates }}</div>
+                </div>
+            </div>
+            <div class="kpi-stats">
+                <div class="kpi-chip">
+                    <i class="fas fa-user-plus"></i>
+                    +{{ new_candidates_7|default(0) }} / 7d
+                </div>
+                <div class="kpi-chip">
+                    <i class="fas fa-calendar"></i>
+                    +{{ new_candidates_30|default(0) }} / 30d
+                </div>
+            </div>
+        </div>
+
+        <!-- Applications -->
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <div class="kpi-icon">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <div class="kpi-info">
+                    <div class="kpi-label">Applications<br><br></div>
+                    <div class="kpi-value">{{ total_apps }}</div>
+                </div>
+            </div>
+            <div class="kpi-stats">
+                <div class="kpi-chip">
+                    <i class="fas fa-file-upload"></i>
+                    +{{ new_docs_7|default(0) }} CVs / 7d
+                </div>
+                <div class="kpi-chip">
+                    <i class="fas fa-file-invoice"></i>
+                    +{{ new_docs_30|default(0) }} / 30d
+                </div>
+            </div>
+        </div>
+
+        <!-- Interviews -->
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <div class="kpi-icon">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="kpi-info">
+                    <div class="kpi-label">Interviews<br><br></div>
+                    <div class="kpi-value">{{ interviews }}</div>
+                </div>
+            </div>
+            <div class="kpi-stats">
+                <div class="kpi-chip">
+                    <i class="fas fa-calendar-week"></i>
+                    {{ upcoming_interviews|length|default(0) }} This Week
+                </div>
+            </div>
+        </div>
+
+        <!-- Vetting In Progress -->
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <div class="kpi-icon">
+                    <i class="fas fa-clipboard-check"></i>
+                </div>
+                <div class="kpi-info">
+                    <div class="kpi-label">Vetting In Progress</div>
+                    <div class="kpi-value">
+                        {{ vetting_in_progress|length if vetting_in_progress is defined else 0 }}
+                    </div>
+                </div>
+            </div>
+            <div class="kpi-stats">
+                <div class="kpi-chip">
+                    <i class="fas fa-hourglass-half"></i>
+                    Active Reviews
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upcoming Interviews -->
+    <div class="dashboard-card delay-1">
+                <div class="card-header-custom">
+                    <h2 class="card-title-custom">
+                        <i class="fas fa-calendar-check"></i>
+                        Upcoming Interviews
+                    </h2>
+                    <span class="card-badge">Next 7 Days</span>
+                </div>
+
+                {% if upcoming_interviews %}
+                <div class="table-responsive">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Candidate</th>
+                                <th>Role</th>
+                                <th>Engagement</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for a, c, j in upcoming_interviews %}
+                            <tr>
+                                <td>{{ a.interview_scheduled_at }}</td>
+                                <td>{{ c.name }}</td>
+                                <td>{{ j.title }}</td>
+                                <td>
+                                    {% if j.engagement %}
+                                        {{ j.engagement.name }}
+                                    {% else %}
+                                        <span style="color: #94a3b8;">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('application_detail', app_id=a.id) }}" class="btn-action">
+                                        <i class="fas fa-eye"></i>
+                                        View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-calendar-times"></i>
+                    <h3>No Upcoming Interviews</h3>
+                    <p>You don't have any interviews scheduled for the next 7 days.</p>
+                </div>
+                {% endif %}
+    </div>
+
+    <!-- Engagement Progress -->
+    <div class="dashboard-card delay-3">
+        <div class="card-header-custom">
+            <h2 class="card-title-custom">
+                <i class="fas fa-chart-bar"></i>
+                Engagement Progress
+            </h2>
+            <span class="card-badge">{{ engagement_progress|length }} Active</span>
+        </div>
+
+        {% if engagement_progress %}
+        <div class="row g-3">
+            {% for e, planned, signed, pct in engagement_progress %}
+            <div class="col-12 col-md-6 col-xl-4">
+                <div class="progress-card">
+                    <div class="progress-header">
+                        <div class="progress-title">
+                            <a href="{{ url_for('engagement_dashboard', eng_id=e.id) }}" class="text-decoration-none">
+                                {{ e.name }}
+                                {% if e.client %}
+                                    <span style="color: #94a3b8; font-weight: 400;">({{ e.client }})</span>
+                                {% endif %}
+                            </a>
+                        </div>
+                        <span class="status-badge {% if pct >= 80 %}status-success{% elif pct >= 40 %}status-warning{% else %}status-secondary{% endif %}">
+                            {{ pct }}%
+                        </span>
+                    </div>
+                    <div class="progress-subtitle">Signed {{ signed }}/{{ planned }}</div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" style="width: {{ pct }}%"></div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-chart-bar"></i>
+            <h3>No Active Engagements</h3>
+            <p>You don't have any active engagements at the moment.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="row g-3">
+        <!-- Unsigned Contracts -->
+        <div class="col-lg-6">
+            <div class="dashboard-card delay-4">
+                <div class="card-header-custom">
+                    <h2 class="card-title-custom">
+                        <i class="fas fa-file-contract"></i>
+                        Unsigned Contracts
+                    </h2>
+                    <span class="card-badge">&gt; 3 Days</span>
+                </div>
+
+                {% if unsigned_contracts %}
+                <div class="table-responsive">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Candidate</th>
+                                <th>Role</th>
+                                <th>Sent</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for es, a, c, j in unsigned_contracts %}
+                            <tr>
+                                <td>{{ c.name }}</td>
+                                <td>{{ j.title }}</td>
+                                <td>{{ es.sent_at }}</td>
+                                <td>
+                                    <a href="{{ url_for('application_detail', app_id=a.id) }}" class="btn-action">
+                                        <i class="fas fa-eye"></i>
+                                        View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-check-circle"></i>
+                    <h3>All Clear!</h3>
+                    <p>Nothing to chase.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Jobs -->
+        <div class="col-lg-6">
+            <div class="dashboard-card delay-4">
+                <div class="card-header-custom">
+                    <h2 class="card-title-custom">
+                        <i class="fas fa-briefcase"></i>
+                        Recent Jobs
+                    </h2>
+                    <a href="{{ url_for('jobs') }}" class="btn-action">
+                        <i class="fas fa-list"></i>
+                        View All
+                    </a>
+                </div>
+
+                {% if recent_jobs %}
+                    {% for j in recent_jobs %}
+                    <div class="jobs-list-item">
+                        <div class="job-item-content">
+                            <div class="job-item-title">{{ j.title }}</div>
+                            <div class="job-item-meta">
+                                {{ j.location or 'Location tbc' }} • 
+                                <a href="{{ url_for('public_job', token=j.public_token) }}" class="job-item-link">Public Link</a>
+                            </div>
+                        </div>
+                        <a href="{{ url_for('jobs') }}" class="btn-action">
+                            <i class="fas fa-cog"></i>
+                            Manage
+                        </a>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-briefcase"></i>
+                    <h3>No Jobs Yet</h3>
+                    <p>Create your first job to get started.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

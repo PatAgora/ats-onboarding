@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Open Roles</title>
+  
+  <!-- Bootstrap 5.3.2 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <!-- Font Awesome 6.4.0 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    /* Modern Professional Jobs List Styling */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #f8f9fa;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: #334155;
+      line-height: 1.6;
+    }
+
+    .jobs-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+    }
+
+    /* Hero Section */
+    .jobs-hero {
+      background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+      border-radius: 20px;
+      padding: 3rem 2.5rem;
+      color: white;
+      margin-bottom: 2rem;
+      box-shadow: 0 20px 60px rgba(30, 58, 138, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .jobs-hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -10%;
+      width: 400px;
+      height: 400px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .jobs-hero::after {
+      content: '';
+      position: absolute;
+      bottom: -30%;
+      left: -5%;
+      width: 300px;
+      height: 300px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .jobs-hero-content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+    }
+
+    .jobs-title-section {
+      flex: 1;
+      min-width: 250px;
+    }
+
+    .jobs-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+      line-height: 1.2;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .jobs-title i {
+      font-size: 2.5rem;
+      opacity: 0.9;
+    }
+
+    .jobs-subtitle {
+      font-size: 1rem;
+      opacity: 0.95;
+      margin: 0;
+    }
+
+    .jobs-auth-section {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.75rem;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.938rem;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .user-info i {
+      font-size: 1.125rem;
+    }
+
+    .auth-buttons {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn-auth {
+      padding: 0.5rem 1.25rem;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 0.875rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      border: 2px solid;
+      cursor: pointer;
+    }
+
+    .btn-auth-outline {
+      background: transparent;
+      color: white;
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-auth-outline:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.5);
+      color: white;
+      transform: translateY(-2px);
+    }
+
+    .btn-auth-solid {
+      background: white;
+      color: #1e3a8a;
+      border-color: white;
+    }
+
+    .btn-auth-solid:hover {
+      background: #f8fafc;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3);
+      color: #1e3a8a;
+    }
+
+    /* Jobs List Card */
+    .jobs-list-card {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    /* Job Item */
+    .job-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem;
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border: 2px solid #e5e7eb;
+      border-radius: 16px;
+      margin-bottom: 1rem;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      color: inherit;
+      gap: 1.5rem;
+    }
+
+    .job-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .job-item:hover {
+      border-color: #3b82f6;
+      transform: translateX(4px);
+      box-shadow: 0 8px 20px rgba(59, 130, 246, 0.15);
+      background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
+    }
+
+    .job-item-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .job-item-title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 0.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .job-item-title i {
+      font-size: 1.25rem;
+      color: #3b82f6;
+    }
+
+    .job-item-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+      font-size: 0.875rem;
+      color: #64748b;
+      margin-top: 0.5rem;
+    }
+
+    .job-item-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+    }
+
+    .job-item-meta-item i {
+      font-size: 0.875rem;
+      color: #94a3b8;
+    }
+
+    .job-item-arrow {
+      color: #3b82f6;
+      font-size: 1.5rem;
+      transition: all 0.3s ease;
+    }
+
+    .job-item:hover .job-item-arrow {
+      transform: translateX(4px);
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: #64748b;
+    }
+
+    .empty-state i {
+      font-size: 5rem;
+      color: #cbd5e1;
+      margin-bottom: 1.5rem;
+    }
+
+    .empty-state h3 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #475569;
+      margin-bottom: 0.75rem;
+    }
+
+    .empty-state p {
+      font-size: 1rem;
+      margin: 0;
+      color: #64748b;
+    }
+
+    /* Jobs Count Badge */
+    .jobs-count {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: white;
+      margin-top: 0.5rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .jobs-hero {
+        padding: 2rem 1.5rem;
+      }
+
+      .jobs-title {
+        font-size: 1.75rem;
+      }
+
+      .jobs-hero-content {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .jobs-auth-section {
+        align-items: stretch;
+      }
+
+      .auth-buttons {
+        width: 100%;
+      }
+
+      .btn-auth {
+        flex: 1;
+        justify-content: center;
+      }
+
+      .job-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+
+      .job-item-arrow {
+        align-self: flex-end;
+      }
+
+      .jobs-list-card {
+        padding: 1.5rem;
+      }
+    }
+
+    /* Animation */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .fade-in-up {
+      animation: fadeInUp 0.6s ease-out;
+      animation-fill-mode: both;
+    }
+
+    .stagger-1 { animation-delay: 0.1s; }
+    .stagger-2 { animation-delay: 0.2s; }
+
+    .job-item {
+      animation: fadeInUp 0.5s ease-out;
+      animation-fill-mode: both;
+    }
+
+    {% for i in range(20) %}
+    .job-item:nth-child({{ i + 1 }}) { animation-delay: {{ 0.1 + (i * 0.05) }}s; }
+    {% endfor %}
+  </style>
+</head>
+<body>
+
+<div class="jobs-container">
+  
+  <!-- Hero Section -->
+  <div class="jobs-hero fade-in-up">
+    <div class="jobs-hero-content">
+      <div class="jobs-title-section">
+        <h1 class="jobs-title">
+          <i class="fas fa-briefcase"></i>
+          Open Roles
+        </h1>
+        <p class="jobs-subtitle">Discover exciting career opportunities</p>
+        {% if jobs %}
+        <div class="jobs-count">
+          <i class="fas fa-list-check"></i>
+          {{ jobs|length }} position{{ 's' if jobs|length != 1 else '' }} available
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="jobs-auth-section">
+        {% if cand %}
+          <!-- Signed in state -->
+          <div class="user-info">
+            <i class="fas fa-user-circle"></i>
+            <span><strong>{{ cand.name }}</strong></span>
+          </div>
+          <a class="btn-auth btn-auth-outline" href="{{ url_for('public.logout') }}">
+            <i class="fas fa-right-from-bracket"></i>
+            Logout
+          </a>
+        {% else %}
+          <!-- Not signed in state -->
+          <div class="auth-buttons">
+            <a class="btn-auth btn-auth-outline" href="{{ url_for('public.login') }}">
+              <i class="fas fa-right-to-bracket"></i>
+              Sign In
+            </a>
+            <a class="btn-auth btn-auth-solid" href="{{ url_for('public.signup') }}">
+              <i class="fas fa-user-plus"></i>
+              Create Account
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Jobs List -->
+  <div class="jobs-list-card fade-in-up stagger-1">
+    {% if jobs %}
+      {% for j in jobs %}
+        <a class="job-item" href="{{ url_for('public.job_public', job_id=j.id) }}">
+          <div class="job-item-content">
+            <div class="job-item-title">
+              <i class="fas fa-circle-dot"></i>
+              {{ j.title }}
+            </div>
+            <div class="job-item-meta">
+              {% if j.role_type %}
+              <div class="job-item-meta-item">
+                <i class="fas fa-tag"></i>
+                {{ j.role_type }}
+              </div>
+              {% endif %}
+              {% if j.location %}
+              <div class="job-item-meta-item">
+                <i class="fas fa-location-dot"></i>
+                {{ j.location }}
+              </div>
+              {% endif %}
+              {% if j.salary_range %}
+              <div class="job-item-meta-item">
+                <i class="fas fa-sterling-sign"></i>
+                {{ j.salary_range }}
+              </div>
+              {% endif %}
+              <div class="job-item-meta-item">
+                <i class="fas fa-calendar-plus"></i>
+                Posted {{ j.created_at.strftime('%d %b %Y') if j.created_at else '—' }}
+              </div>
+            </div>
+          </div>
+          <div class="job-item-arrow">
+            <i class="fas fa-arrow-right"></i>
+          </div>
+        </a>
+      {% endfor %}
+    {% else %}
+      <div class="empty-state">
+        <i class="fas fa-briefcase"></i>
+        <h3>No Open Roles Right Now</h3>
+        <p>Check back soon for new opportunities!</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Footer Help Text -->
+  <div style="text-align: center; color: #64748b; font-size: 0.875rem;">
+    <i class="fas fa-question-circle" style="color: #3b82f6;"></i>
+    Questions? Contact us for more information about these positions
+  </div>
+
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,532 @@
+{% extends "base.html" %}
+{% set hide_topbar = True %}
+{% block title %}{{ cand.name }} · Candidate · ATS{% endblock %}
+
+{% block content %}
+<style>
+  /* Modern Card Styles */
+  .modern-card {
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    transition: box-shadow 0.3s ease;
+    background: white;
+  }
+  
+  .modern-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  }
+  
+  /* Page Header */
+  .page-header-section {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    border-radius: 16px;
+    padding: 2rem;
+    color: white;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  }
+  
+  .page-header-section h1 {
+    color: white;
+    margin-bottom: 0.5rem;
+    font-size: 2rem;
+    font-weight: 700;
+  }
+  
+  .page-header-section .contact-info {
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 0.95rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  
+  .page-header-section .contact-info i {
+    opacity: 0.8;
+  }
+  
+  /* Section Headers */
+  .section-header {
+    margin-bottom: 1.5rem;
+  }
+  
+  .section-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1f2937;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .section-title i {
+    color: #3b82f6;
+  }
+  
+  .section-subtitle {
+    color: #6b7280;
+    font-size: 0.875rem;
+  }
+  
+  /* AI Summary Box */
+  .ai-summary-box {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border: 2px solid #3b82f6;
+    border-radius: 12px;
+    padding: 1.5rem;
+    white-space: pre-wrap;
+    line-height: 1.7;
+    font-size: 0.95rem;
+    color: #1f2937;
+  }
+  
+  .ai-summary-empty {
+    background: #f9fafb;
+    border: 2px dashed #d1d5db;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    color: #6b7280;
+  }
+  
+  .ai-summary-empty i {
+    font-size: 2.5rem;
+    color: #d1d5db;
+    margin-bottom: 1rem;
+  }
+  
+  /* Documents List */
+  .documents-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .documents-list li {
+    padding: 0.75rem 1rem;
+    background: #f9fafb;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: background 0.2s ease;
+  }
+  
+  .documents-list li:hover {
+    background: #f3f4f6;
+  }
+  
+  .documents-list li i {
+    color: #3b82f6;
+    font-size: 1.25rem;
+  }
+  
+  .documents-list a {
+    color: #1f2937;
+    text-decoration: none;
+    font-weight: 600;
+    flex: 1;
+  }
+  
+  .documents-list a:hover {
+    color: #3b82f6;
+  }
+  
+  .document-meta {
+    color: #6b7280;
+    font-size: 0.85rem;
+  }
+  
+  /* Skills Display */
+  .skills-display {
+    background: #f9fafb;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 0.875rem;
+    font-size: 0.95rem;
+    color: #1f2937;
+    min-height: 3rem;
+    line-height: 1.6;
+  }
+  
+  .skills-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #374151;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+  }
+  
+  /* Context Panel */
+  .context-panel {
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+  
+  .context-section-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #374151;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .context-section-title i {
+    color: #3b82f6;
+  }
+  
+  /* Form Fields */
+  .field-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #374151;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+  }
+  
+  .field-input {
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #1f2937;
+    transition: all 0.2s ease;
+    background: white;
+  }
+  
+  .field-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+  
+  /* Buttons */
+  .btn-modern {
+    border-radius: 8px;
+    padding: 0.625rem 1.5rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    border: none;
+    font-size: 0.95rem;
+  }
+  
+  .btn-modern-primary {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    color: white;
+  }
+  
+  .btn-modern-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    color: white;
+  }
+  
+  .btn-modern-outline {
+    background: white;
+    border: 2px solid #e5e7eb;
+    color: #374151;
+  }
+  
+  .btn-modern-outline:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+    background: #f9fafb;
+  }
+  
+  .btn-modern-outline-light {
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    color: white;
+    backdrop-filter: blur(10px);
+  }
+  
+  .btn-modern-outline-light:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.6);
+    color: white;
+  }
+  
+  .btn-edit-link {
+    color: #3b82f6;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: color 0.2s ease;
+  }
+  
+  .btn-edit-link:hover {
+    color: #2563eb;
+  }
+  
+  .btn-edit-link i {
+    font-size: 0.75rem;
+  }
+  
+  /* Divider */
+  .section-divider {
+    border: none;
+    height: 2px;
+    background: linear-gradient(90deg, #e5e7eb 0%, #3b82f6 50%, #e5e7eb 100%);
+    margin: 1.5rem 0;
+  }
+  
+  /* Animation */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .fade-in-up {
+    animation: fadeInUp 0.5s ease forwards;
+  }
+  
+  .stagger-1 { animation-delay: 0.1s; opacity: 0; }
+  .stagger-2 { animation-delay: 0.2s; opacity: 0; }
+  .stagger-3 { animation-delay: 0.3s; opacity: 0; }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .page-header-section {
+      padding: 1.5rem;
+    }
+    
+    .page-header-section h1 {
+      font-size: 1.5rem;
+    }
+  }
+</style>
+
+<!-- Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<div class="container-xxl px-4 pt-3 pb-4">
+  <!-- Enhanced Header -->
+  <div class="page-header-section fade-in-up stagger-1">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <div>
+        <h1>
+          <i class="fas fa-user-circle"></i>
+          {{ cand.name }}
+        </h1>
+        <div class="contact-info">
+          {% if cand.email %}
+            <span>
+              <i class="fas fa-envelope"></i>
+              {{ cand.email }}
+            </span>
+          {% endif %}
+          {% if cand.phone %}
+            <span>
+              <i class="fas fa-phone"></i>
+              {{ cand.phone }}
+            </span>
+          {% endif %}
+          {% if not cand.email and not cand.phone %}
+            <span class="text-muted">No contact information available</span>
+          {% endif %}
+        </div>
+      </div>
+      <a class="btn btn-modern-outline-light btn-sm" href="{{ url_for('resource_pool') }}">
+        <i class="fas fa-arrow-left"></i> Back to Resource Pool
+      </a>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Main Content -->
+    <div class="col-12 col-lg-8">
+      <!-- AI Summary Card -->
+      <div class="modern-card mb-4 fade-in-up stagger-2">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <div class="section-title mb-0">
+              <i class="fas fa-brain"></i>
+              AI Summary
+            </div>
+            {% if latest_app %}
+              <a class="btn btn-modern-outline btn-sm" href="{{ url_for('applications') }}">
+                <i class="fas fa-file-alt"></i> View Applications
+              </a>
+            {% endif %}
+          </div>
+
+          {% if ai_summary %}
+            <div class="ai-summary-box">{{ ai_summary }}</div>
+          {% else %}
+            <div class="ai-summary-empty">
+              <div>
+                <i class="fas fa-robot"></i>
+              </div>
+              <div class="mb-2"><strong>No AI summary available yet</strong></div>
+              <div>
+                {% if documents_ctx and documents_ctx|length %}
+                  Click "Regenerate Summary" below to create one from the uploaded documents.
+                {% else %}
+                  Upload a CV to this candidate first to generate an AI summary.
+                {% endif %}
+              </div>
+            </div>
+          {% endif %}
+
+          <div class="mt-3">
+            <form class="d-inline" method="POST" action="{{ url_for('candidate_regenerate_summary') }}">
+              <input type="hidden" name="candidate_id" value="{{ cand.id }}">
+              <button type="submit" class="btn-modern btn-modern-outline">
+                <i class="fas fa-sync-alt"></i> Regenerate Summary
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Documents Card -->
+      <div class="modern-card fade-in-up stagger-2">
+        <div class="card-body p-4">
+          <div class="section-header">
+            <div class="section-title">
+              <i class="fas fa-file-pdf"></i>
+              Documents
+            </div>
+            <div class="section-subtitle">
+              {% if documents_ctx and documents_ctx|length %}
+                {{ documents_ctx|length }} document{{ 's' if documents_ctx|length != 1 else '' }} uploaded
+              {% else %}
+                No documents uploaded yet
+              {% endif %}
+            </div>
+          </div>
+
+          {% if documents_ctx and documents_ctx|length %}
+            <ul class="documents-list">
+              {% for d in documents_ctx %}
+                <li>
+                  <i class="fas fa-file-{{ 'pdf' if d.doc_type == 'cv' else 'alt' }}"></i>
+                  <div style="flex: 1;">
+                    {% if d.doc_type == 'cv' and d.filename %}
+                      <a href="{{ url_for('download_cv', fname=d.filename) }}">{{ d.name }}</a>
+                    {% else %}
+                      <span class="fw-semibold">{{ d.name }}</span>
+                    {% endif %}
+                    {% if d.ts %}
+                      <span class="document-meta">· {{ d.ts }}</span>
+                    {% endif %}
+                  </div>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <div class="ai-summary-empty">
+              <div>
+                <i class="fas fa-file-upload"></i>
+              </div>
+              <div class="mb-2"><strong>No Documents</strong></div>
+              <div>Upload CV or other documents for this candidate.</div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-12 col-lg-4">
+      <!-- Context Panel -->
+      <div class="modern-card mb-4 fade-in-up stagger-3">
+        <div class="card-body p-4">
+          <div class="context-section-title">
+            <i class="fas fa-tags"></i>
+            Context
+          </div>
+
+          <!-- Skills Section -->
+          <div class="mb-3">
+            <div class="skills-label">Skills</div>
+            <div class="skills-display" id="skills-view">
+              {{ skills or '—' }}
+            </div>
+
+            <button class="btn-edit-link mt-2" type="button" data-bs-toggle="collapse" data-bs-target="#skills-edit" aria-expanded="false" aria-controls="skills-edit">
+              <i class="fas fa-edit"></i>
+              Edit skills
+            </button>
+
+            <div class="collapse mt-3" id="skills-edit">
+              <form method="POST" action="{{ url_for('candidate_skills_update', cand_id=cand.id) }}">
+                <div class="mb-2">
+                  <textarea name="skills" class="field-input form-control" rows="4" placeholder="Comma or pipe-separated skills…">{{ skills }}</textarea>
+                </div>
+                <div class="d-flex gap-2">
+                  <button class="btn-modern btn-modern-primary btn-sm flex-grow-1" type="submit">
+                    <i class="fas fa-save"></i> Save
+                  </button>
+                  <button class="btn-modern btn-modern-outline btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#skills-edit">
+                    <i class="fas fa-times"></i> Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <hr class="section-divider">
+
+          <!-- Quick Shortlist Section -->
+          <div>
+            <div class="skills-label mb-2">Match to Job</div>
+            <form method="POST" action="{{ url_for('candidate_shortlist_action') }}">
+              <div class="mb-2">
+                <select class="field-input form-select" name="job_id" required>
+                  <option value="">Select job…</option>
+                  {% for j in g.get('jobs_for_quick_pick', []) %}
+                    <option value="{{ j.id }}">{{ j.title }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <input type="hidden" name="candidate_id" value="{{ cand.id }}">
+              <button class="btn-modern btn-modern-primary w-100" type="submit">
+                <i class="fas fa-star"></i> Add to Shortlist
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Match Score Card -->
+      <div class="modern-card fade-in-up stagger-3">
+        <div class="card-body p-4">
+          <div class="context-section-title mb-3">
+            <i class="fas fa-chart-bar"></i>
+            AI Match Score
+          </div>
+          <form method="POST" action="{{ url_for('recalculate_match_score') }}">
+            <input type="hidden" name="candidate_id" value="{{ cand.id }}">
+            <button class="btn-modern btn-modern-outline w-100">
+              <i class="fas fa-sync-alt"></i> Recalculate Score
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

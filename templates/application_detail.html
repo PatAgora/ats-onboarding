@@ -1,0 +1,395 @@
+{% extends "base.html" %}
+{% set hide_topbar = True %}
+{% block title %}Application · {{ cand.name }}{% endblock %}
+
+{% block head %}
+<style>
+  /* Modern Card Styles */
+  .modern-card { border-radius:16px; border:none; box-shadow:0 1px 3px rgba(0,0,0,0.08); transition:box-shadow .3s ease; background:white; }
+  .modern-card:hover { box-shadow:0 4px 12px rgba(0,0,0,0.12); }
+
+  /* Page Header */
+  .page-header-section {
+    background:linear-gradient(135deg,#1e3a8a 0%,#3b82f6 100%);
+    border-radius:16px; padding:2rem; color:white; margin-bottom:2rem;
+    box-shadow:0 4px 12px rgba(59,130,246,.3); animation:fadeInUp .5s ease;
+  }
+  .page-header-section h1 { color:white; margin-bottom:.5rem; font-size:2rem; font-weight:700; display:flex; align-items:center; gap:1rem; }
+  .page-header-section .subtitle { color:rgba(255,255,255,.9); font-size:1rem; margin-bottom:0; }
+  .page-header-section .contact-info { color:rgba(255,255,255,.85); font-size:.95rem; margin-top:.5rem; }
+
+  /* Application Status Banner */
+  .status-banner { border-radius:12px; padding:1.25rem; margin-bottom:2rem; display:flex; align-items:center; flex-wrap:wrap; gap:1.5rem; animation:fadeInUp .6s ease; }
+  .status-banner.open { background:linear-gradient(135deg,#dcfce7 0%,#d1fae5 100%); border:2px solid #86efac; }
+  .status-banner.closed { background:linear-gradient(135deg,#f1f5f9 0%,#e2e8f0 100%); border:2px solid #cbd5e1; }
+  .status-banner.info { background:linear-gradient(135deg,#dbeafe 0%,#bfdbfe 100%); border:2px solid #93c5fd; }
+  .status-banner-badge { padding:.4rem .75rem; border-radius:6px; font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
+  .status-banner-badge.open { background:#059669; color:white; }
+  .status-banner-badge.closed { background:#64748b; color:white; }
+  .status-banner-item { display:flex; align-items:center; gap:.5rem; font-size:.95rem; }
+  .status-banner-item strong { color:#1f2937; font-weight:600; }
+  .status-banner-item span { color:#374151; }
+
+  /* Section Headers */
+  .section-title { font-size:1.25rem; font-weight:700; color:#1f2937; display:flex; align-items:center; gap:.75rem; margin-bottom:1rem; }
+  .section-title i { color:#3b82f6; }
+  .section-subtitle { font-size:.75rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:.05em; margin-bottom:.75rem; }
+
+  /* Form Fields */
+  .field-label { display:block; font-size:.75rem; font-weight:700; color:#374151; text-transform:uppercase; letter-spacing:.05em; margin-bottom:.5rem; }
+  .field-input { border:2px solid #e5e7eb; border-radius:8px; padding:.625rem .875rem; font-size:.95rem; font-weight:500; color:#1f2937; transition:all .2s ease; background:white; }
+  .field-input:focus { outline:none; border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.1); }
+
+  /* Buttons */
+  .btn-modern { border-radius:8px; padding:.625rem 1.5rem; font-weight:600; transition:all .2s ease; border:none; font-size:.95rem; }
+  .btn-modern-primary { background:linear-gradient(135deg,#1e3a8a 0%,#3b82f6 100%); color:white; }
+  .btn-modern-primary:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(59,130,246,.4); color:white; }
+  .btn-modern-outline { background:white; border:2px solid #e5e7eb; color:#374151; }
+  .btn-modern-outline:hover { border-color:#3b82f6; color:#3b82f6; background:#f9fafb; }
+  .btn-modern-success { background:linear-gradient(135deg,#059669 0%,#047857 100%); color:white; }
+  .btn-modern-success:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(5,150,105,.4); color:white; }
+  .btn-modern-sm { padding:.4rem 1rem; font-size:.875rem; }
+
+  /* AI Score Display */
+  .score-display { font-size:3rem; font-weight:700; background:linear-gradient(135deg,#1e3a8a 0%,#3b82f6 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:.5rem; }
+
+  /* Tag Chips */
+  .tag-chip { display:inline-flex; align-items:center; gap:.5rem; background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%); color:#1e40af; padding:.4rem .75rem; border-radius:6px; font-size:.85rem; font-weight:600; margin-right:.5rem; margin-bottom:.5rem; }
+  .tag-chip .btn-remove { padding:0; width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:rgba(220,38,38,.1); color:#dc2626; border:none; font-size:.7rem; transition:all .2s ease; line-height:1; }
+  .tag-chip .btn-remove:hover { background:#dc2626; color:white; }
+
+  /* Documents */
+  .doc-list { list-style:none; padding:0; margin:0; }
+  .doc-list li { padding:.625rem 0; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; gap:.5rem; }
+  .doc-list li:last-child { border-bottom:none; }
+  .doc-list a { color:#3b82f6; text-decoration:none; font-weight:500; transition:color .2s ease; }
+  .doc-list a:hover { color:#1e3a8a; text-decoration:underline; }
+  .doc-list .doc-date { color:#9ca3af; font-size:.85rem; }
+
+  /* Summary Box */
+  .summary-box { background:linear-gradient(135deg,#f9fafb 0%,#ffffff 100%); border:2px solid #e5e7eb; border-radius:12px; padding:1.25rem; white-space:pre-wrap; font-size:.95rem; line-height:1.6; color:#374151; }
+
+  /* Details Disclosure */
+  details { margin-top:1rem; }
+  details summary { cursor:pointer; color:#3b82f6; font-weight:600; font-size:.9rem; padding:.5rem; border-radius:6px; transition:background .2s ease; }
+  details summary:hover { background:#f9fafb; }
+  details[open] summary { margin-bottom:.75rem; }
+
+  /* Interview */
+  .interview-form-grid { display:grid; grid-template-columns:1fr 1fr auto; gap:.75rem; align-items:end; }
+  @media (max-width:768px){ .interview-form-grid{ grid-template-columns:1fr; } }
+  .check-item { padding:.5rem 0; }
+  .check-item label { font-weight:500; color:#374151; cursor:pointer; }
+  .empty-state-text { color:#9ca3af; font-style:italic; font-size:.95rem; }
+
+  .interview-status { background:linear-gradient(135deg,#f9fafb 0%,#ffffff 100%); border:2px solid #e5e7eb; border-radius:8px; padding:1rem; margin-top:1rem; }
+  .interview-status-completed { background:linear-gradient(135deg,#dcfce7 0%,#d1fae5 100%); border-color:#86efac; }
+  .interview-status-item { font-size:.9rem; color:#6b7280; margin-bottom:.5rem; }
+  .interview-status-item:last-child { margin-bottom:0; }
+  .interview-status-item strong { color:#1f2937; font-weight:600; }
+
+  /* Animations */
+  @keyframes fadeInUp { from{ opacity:0; transform:translateY(20px);} to{ opacity:1; transform:translateY(0);} }
+  .fade-in-up { animation:fadeInUp .5s ease; }
+  .fade-in-up:nth-child(1){ animation-delay:.1s; animation-fill-mode:both; }
+  .fade-in-up:nth-child(2){ animation-delay:.2s; animation-fill-mode:both; }
+  .fade-in-up:nth-child(3){ animation-delay:.3s; animation-fill-mode:both; }
+  .fade-in-up:nth-child(4){ animation-delay:.4s; animation-fill-mode:both; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-xxl px-4 pt-3 pb-4">
+  <!-- Page Header -->
+  <div class="page-header-section">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+      <div>
+        <h1><i class="fas fa-user-circle"></i>{{ cand.name }}</h1>
+        <div class="contact-info">
+          <i class="fas fa-envelope me-2"></i>{{ cand.email or '—' }}
+          {% if cand.phone %}<span class="mx-2">·</span><i class="fas fa-phone me-2"></i>{{ cand.phone }}{% endif %}
+        </div>
+      </div>
+      <div>
+        {% if from_candidate %}
+          <a class="btn btn-modern btn-modern-outline" href="{{ url_for('resource_pool') }}">
+            <i class="fas fa-arrow-left me-2"></i>Back to Resource Pool
+          </a>
+        {% else %}
+          <a class="btn btn-modern btn-modern-outline" href="{{ url_for('applications') }}">
+            <i class="fas fa-arrow-left me-2"></i>Back to Applications
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Status Banner -->
+  {% if job %}
+    <div class="status-banner {% if job_open %}open{% else %}closed{% endif %}">
+      <div><span class="status-banner-badge {% if job_open %}open{% else %}closed{% endif %}">{% if job_open %}Open Role{% else %}Closed Role{% endif %}</span></div>
+      <div class="status-banner-item"><i class="fas fa-briefcase"></i><strong>Role:</strong><span>{{ job.title }}</span></div>
+      <div class="status-banner-item"><i class="fas fa-calendar-alt"></i><strong>Applied:</strong><span>{{ applied_on.strftime('%Y-%m-%d %H:%M UTC') if applied_on else '—' }}</span></div>
+      {% if appn and appn.status %}<div class="status-banner-item"><i class="fas fa-info-circle"></i><strong>Status:</strong><span>{{ appn.status }}</span></div>{% endif %}
+    </div>
+  {% else %}
+    <div class="status-banner info">
+      <div class="status-banner-item"><i class="fas fa-info-circle"></i><strong>No active applications</strong></div>
+    </div>
+  {% endif %}
+
+  <div class="row g-4">
+    <!-- LEFT -->
+    <div class="col-12 col-lg-8">
+
+      <!-- Candidate Info -->
+      <div class="modern-card p-4 mb-4 fade-in-up">
+        <h2 class="section-title"><i class="fas fa-user"></i>Candidate Information</h2>
+        <div class="mb-3"><strong style="color:#1f2937;">{{ cand.name }}</strong><span class="text-muted">—</span><span style="color:#6b7280;">{{ cand.email }}</span></div>
+
+        <h6 class="section-subtitle">Documents</h6>
+        {% if docs %}
+          <ul class="doc-list">
+            {% for d in docs %}
+              {% set fname = (d.original_name or d.filename)|basename %}
+              {% set lname = fname|lower %}
+              <li>
+                <i class="fas
+                   {% if lname|length >= 5 and lname[-5:] == '.docx' %} fa-file-word
+                   {% elif lname|length >= 4 and lname[-4:] == '.pdf' %} fa-file-pdf
+                   {% else %} fa-file
+                   {% endif %}"
+                   style="color:#dc2626;"></i>
+
+                {% if d.doc_type == 'cv' %}
+                  <a href="{{ url_for('download_cv', fname=fname) }}">{{ d.original_name or d.filename }}</a>
+                {% else %}
+                  <span>{{ d.original_name or d.filename }}</span>
+                {% endif %}
+
+                {% if d.uploaded_at %}
+                  <span class="doc-date">({{ d.uploaded_at.strftime('%Y-%m-%d %H:%M') }})</span>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="empty-state-text">No documents uploaded.</div>
+        {% endif %}
+      </div>
+
+      <!-- AI Summary -->
+      <div class="modern-card p-4 mb-4 fade-in-up">
+        <h2 class="section-title"><i class="fas fa-brain"></i>AI Summary</h2>
+
+        {% if appn and appn.ai_summary %}
+          <div class="summary-box">{{ appn.ai_summary }}</div>
+        {% elif cand.ai_summary %}
+          <div class="summary-box">{{ cand.ai_summary }}</div>
+        {% else %}
+          <div class="empty-state-text">No summary yet.</div>
+        {% endif %}
+
+        <div class="mt-3">
+          {% if appn %}
+            <form method="POST" action="{{ url_for('action_summarise', app_id=appn.id) }}" class="d-inline">
+              <button class="btn btn-modern btn-modern-outline btn-modern-sm"><i class="fas fa-sync-alt me-2"></i>Generate Summary</button>
+            </form>
+          {% else %}
+            <form method="POST" action="{{ url_for('candidate_regenerate_summary') }}" class="d-inline">
+              <input type="hidden" name="candidate_id" value="{{ cand.id }}">
+              <button class="btn btn-modern btn-modern-outline btn-modern-sm"><i class="fas fa-sync-alt me-2"></i>Generate Summary</button>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if appn %}
+      <!-- Interview -->
+      <div class="modern-card p-4 mb-4 fade-in-up">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
+          <h2 class="section-title mb-0"><i class="fas fa-handshake"></i>Interview</h2>
+          {% if appn.interview_scheduled_at and not appn.interview_completed_at %}
+            <form method="POST" action="{{ url_for('action_complete_interview', app_id=appn.id) }}">
+              <button class="btn btn-modern btn-modern-success btn-modern-sm"><i class="fas fa-check me-2"></i>Mark Completed</button>
+            </form>
+          {% endif %}
+        </div>
+
+        <form method="POST" action="{{ url_for('action_schedule_interview', app_id=appn.id) }}" class="mb-3">
+          <div class="row g-3">
+            <div class="col-md-5">
+              <label class="field-label">Interview Date/Time</label>
+              <input type="datetime-local" name="scheduled_at" class="form-control field-input" required>
+            </div>
+            <div class="col-md-5">
+              <label class="field-label">Interviewer Email (Optional)</label>
+              <input type="email" name="interviewer_email" placeholder="name@client.com" class="form-control field-input">
+            </div>
+            <div class="col-md-2 d-grid align-items-end">
+              <button class="btn btn-modern btn-modern-primary" type="submit"><i class="fas fa-calendar-plus"></i></button>
+            </div>
+          </div>
+        </form>
+
+        <div class="interview-status {% if appn.interview_completed_at %}interview-status-completed{% endif %}">
+          {% if appn.interview_scheduled_at %}
+            <div class="interview-status-item"><i class="fas fa-calendar-check me-2"></i><strong>Scheduled:</strong> {{ appn.interview_scheduled_at }}</div>
+          {% else %}
+            <div class="interview-status-item empty-state-text"><i class="fas fa-calendar-times me-2"></i>No interview scheduled.</div>
+          {% endif %}
+          {% if appn.interview_completed_at %}
+            <div class="interview-status-item" style="color:#059669; font-weight:600;"><i class="fas fa-check-circle me-2"></i>Interview completed: {{ appn.interview_completed_at }}</div>
+          {% endif %}
+        </div>
+
+        <hr class="my-3">
+
+        <h6 class="section-subtitle">Interview Notes</h6>
+        <form method="POST" action="{{ url_for('action_save_interview_notes', app_id=appn.id) }}">
+          <div class="mb-3">
+            <textarea class="form-control field-input" name="interview_notes" rows="4" placeholder="Feedback, concerns, recommendation, next steps…">{{ appn.interview_notes or '' }}</textarea>
+          </div>
+          <button class="btn btn-modern btn-modern-outline btn-modern-sm"><i class="fas fa-save me-2"></i>Save Notes</button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- RIGHT -->
+    <div class="col-12 col-lg-4">
+
+      <!-- AI Match Score -->
+      <div class="modern-card p-4 mb-4 fade-in-up">
+        <h6 class="section-subtitle">AI Match Score</h6>
+        <div class="score-display">{% if appn %}{{ appn.ai_score or 0 }}{% else %}—{% endif %}</div>
+
+        <!-- Recalc form: sends job_id (job.id or appn.job_id) to candidate scorer -->
+        <div class="mt-2">
+          <form method="post" action="{{ url_for('action_score_legacy', cand_id=cand.id) }}">
+            <input type="hidden" name="job_id" value="{{ job.id if job else (appn.job_id if appn else '') }}">
+            <button class="btn btn-modern btn-modern-outline btn-modern-sm">
+              <i class="fas fa-calculator me-2"></i>Recalculate
+            </button>
+          </form>
+        </div>
+
+        {% if appn and appn.ai_explanation %}
+          <details>
+            <summary><i class="fas fa-question-circle me-2"></i>Why this score?</summary>
+            <div class="summary-box mt-2">{{ appn.ai_explanation }}</div>
+          </details>
+        {% endif %}
+      </div>
+
+      <!-- Tags -->
+      <div class="modern-card p-4 mb-4 fade-in-up">
+        <h6 class="section-subtitle">Tags</h6>
+
+        {% if cand_tags and cand_tags|length %}
+          <div class="mb-3">
+            {% for t in cand_tags %}
+              <span class="tag-chip">
+                <i class="fas fa-tag"></i>{{ t.tag }}
+                <form method="POST" action="{{ url_for('candidate_tag_remove', cand_id=cand.id) }}" class="d-inline m-0">
+                  <input type="hidden" name="tag_id" value="{{ t.id }}">
+                  <button type="submit" class="btn-remove" title="Remove tag"><i class="fas fa-times"></i></button>
+                </form>
+              </span>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state-text mb-3">No tags yet.</div>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('candidate_tag_add', cand_id=cand.id) }}" class="mb-2">
+          <div class="d-flex gap-2">
+            <select name="tag_id" class="form-select field-input flex-grow-1" required>
+              <option value="">Add tag…</option>
+              {% for c in cats %}
+                <optgroup label="[{{ c.type }}] {{ c.name }}">
+                  {% for tg in tags_by_cat.get(c.id, []) %}
+                    <option value="{{ tg.id }}">{{ tg.tag }}</option>
+                  {% endfor %}
+                </optgroup>
+              {% endfor %}
+            </select>
+            <button class="btn btn-modern btn-modern-primary btn-modern-sm"><i class="fas fa-plus"></i></button>
+          </div>
+        </form>
+
+        <form method="POST" action="{{ url_for('candidate_regenerate_summary') }}">
+          <input type="hidden" name="candidate_id" value="{{ cand.id }}">
+          <button class="btn btn-modern btn-modern-outline btn-modern-sm w-100">
+            <i class="fas fa-sync-alt me-2"></i>Retag from CV
+          </button>
+        </form>
+      </div>
+
+      {% if appn %}
+      <!-- Onboarding -->
+      <div class="modern-card p-4 mb-4 fade-in-up">
+        <h6 class="section-subtitle">Onboarding</h6>
+        <form method="POST" action="{{ url_for('action_onboarding_email', app_id=appn.id) }}">
+          <button class="btn btn-modern btn-modern-success w-100"><i class="fas fa-rocket me-2"></i>Send Onboarding Email</button>
+        </form>
+      </div>
+
+      <!-- E-Signature -->
+      <div class="modern-card p-4 mb-4 fade-in-up">
+        <h6 class="section-subtitle">E-Signature</h6>
+        <form method="POST" action="{{ url_for('action_esign', app_id=appn.id) }}" class="mb-2">
+          <button class="btn btn-modern btn-modern-primary w-100"><i class="fas fa-pen-fancy me-2"></i>Send for E-Signature</button>
+        </form>
+        <form method="POST" action="{{ url_for('action_esign_status', app_id=appn.id) }}">
+          <button class="btn btn-modern btn-modern-outline btn-modern-sm w-100"><i class="fas fa-sync-alt me-2"></i>Refresh Status</button>
+        </form>
+      </div>
+      {% endif %}
+
+      <!-- TrustID -->
+      <div class="modern-card p-4 fade-in-up">
+        <h6 class="section-subtitle">TrustID Checks</h6>
+
+        {% if trust %}
+          <div class="mb-2"><strong style="color:#1f2937;">Status:</strong> <span style="color:#6b7280;">{{ trust.status or '—' }}</span></div>
+          <div class="mb-3" style="font-size:.85rem; color:#9ca3af;">App ID: {{ trust.trustid_application_id or '—' }}</div>
+          {% if trust_result %}
+            <details class="mb-3">
+              <summary><i class="fas fa-file-alt me-2"></i>Last result</summary>
+              <pre class="summary-box mt-2" style="font-size:.8rem; overflow-x:auto;">{{ trust_result | tojson(indent=2) }}</pre>
+            </details>
+          {% endif %}
+        {% else %}
+          <div class="empty-state-text mb-3">No TrustID checks yet.</div>
+        {% endif %}
+
+        {% if appn %}
+          <form method="POST" action="{{ url_for('action_trustid', app_id=appn.id) }}">
+            <div class="check-item">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="rtw" id="rtw">
+                <label class="form-check-label" for="rtw"><i class="fas fa-check-circle me-2" style="color:#3b82f6;"></i>Right to Work</label>
+              </div>
+            </div>
+            <div class="check-item">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="idv" id="idv" checked>
+                <label class="form-check-label" for="idv"><i class="fas fa-id-card me-2" style="color:#3b82f6;"></i>ID&V</label>
+              </div>
+            </div>
+            <div class="check-item mb-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="dbs" id="dbs">
+                <label class="form-check-label" for="dbs"><i class="fas fa-shield-alt me-2" style="color:#3b82f6;"></i>DBS</label>
+              </div>
+            </div>
+            <button class="btn btn-modern btn-modern-outline btn-modern-sm w-100"><i class="fas fa-play me-2"></i>Initiate Checks</button>
+          </form>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
