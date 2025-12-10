@@ -35,7 +35,7 @@ from sqlalchemy.orm import relationship, backref
 from wtforms import Form
 from wtforms.validators import DataRequired
 from wtforms import StringField, SelectField
-from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user
+from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from flask import session
@@ -47,6 +47,17 @@ from sqlalchemy import or_, false
 from sqlalchemy.orm import selectinload
 from concurrent.futures import ThreadPoolExecutor
 executor = ThreadPoolExecutor(max_workers=2)
+
+# Security enhancements - CREST compliance
+from security import (
+    init_security, audit_log, require_mfa,
+    generate_mfa_secret, generate_mfa_qr_code, verify_mfa_token,
+    generate_magic_link_token, verify_magic_link_token,
+    validate_file_upload, sanitize_filename,
+    validate_password_strength, add_security_headers
+)
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
 
 from wtforms import FileField
 from wtforms.validators import DataRequired as WTDataRequired
@@ -203,6 +214,24 @@ app = Flask(
 
 app.config["SECRET_KEY"] = SECRET_KEY
 app.config["UPLOAD_FOLDER"] = str(UPLOAD_FOLDER)
+
+# Initialize Sentry for error monitoring
+sentry_dsn = os.getenv('SENTRY_DSN')
+if sentry_dsn:
+    sentry_sdk.init(
+        dsn=sentry_dsn,
+        integrations=[FlaskIntegration()],
+        traces_sample_rate=0.1,
+        environment=os.getenv('FLASK_ENV', 'production'),
+    )
+
+# Initialize security middleware
+limiter = init_security(app)
+
+# Add security headers to all responses
+@app.after_request
+def after_request_security(response):
+    return add_security_headers(response)
 
 @app.context_processor
 def inject_template_helpers():
@@ -6207,7 +6236,213 @@ def candidate_upload_cv(cand_id):
 
     return render_template("candidate_upload_cv.html", form=form, cand=cand)
 
+# --- MFA/2FA Routes for Admin Users ---
+
+@app.route("/mfa/setup", methods=["GET", "POST"])
+@login_required
+def mfa_setup():
+    """Setup MFA for current admin user."""
+    if request.method == "POST":
+        token = request.form.get("token", "").strip()
+        secret = session.get("mfa_setup_secret")
+        
+        if not secret:
+            flash("MFA setup session expired. Please try again.", "danger")
+            return redirect(url_for("mfa_setup"))
+        
+        if verify_mfa_token(secret, token):
+            # Save MFA secret to user record
+            with Session(engine) as s:
+                s.execute(
+                    text("UPDATE users SET mfa_secret = :secret, mfa_enabled_at = :now WHERE id = :user_id"),
+                    {"secret": secret, "now": datetime.datetime.utcnow(), "user_id": current_user.id}
+                )
+                s.commit()
+            
+            session.pop("mfa_setup_secret", None)
+            session["mfa_verified"] = True
+            
+            audit_log("mfa_enabled", user_id=current_user.id)
+            flash("MFA enabled successfully!", "success")
+            return redirect(url_for("index"))
+        else:
+            flash("Invalid verification code. Please try again.", "danger")
+    
+    # Generate new secret for setup
+    secret = generate_mfa_secret()
+    session["mfa_setup_secret"] = secret
+    
+    # Generate QR code
+    qr_code = generate_mfa_qr_code(secret, current_user.email)
+    
+    return render_template("mfa_setup.html", qr_code=qr_code, secret=secret)
+
+
+@app.route("/mfa/verify", methods=["GET", "POST"])
+@login_required
+def mfa_verify():
+    """Verify MFA token for admin user."""
+    # Check if user has MFA enabled
+    with Session(engine) as s:
+        row = s.execute(
+            text("SELECT mfa_secret FROM users WHERE id = :user_id"),
+            {"user_id": current_user.id}
+        ).first()
+        
+        if not row or not row[0]:
+            # MFA not set up, redirect to setup
+            return redirect(url_for("mfa_setup"))
+        
+        mfa_secret = row[0]
+    
+    if request.method == "POST":
+        token = request.form.get("token", "").strip()
+        
+        if verify_mfa_token(mfa_secret, token):
+            session["mfa_verified"] = True
+            session.permanent = True
+            
+            audit_log("mfa_verified", user_id=current_user.id)
+            
+            next_url = request.args.get("next") or url_for("index")
+            return redirect(next_url)
+        else:
+            audit_log("mfa_verification_failed", user_id=current_user.id)
+            flash("Invalid verification code. Please try again.", "danger")
+    
+    return render_template("mfa_verify.html")
+
+
+@app.route("/mfa/disable", methods=["POST"])
+@login_required
+@require_mfa
+def mfa_disable():
+    """Disable MFA for current user (requires MFA verification)."""
+    with Session(engine) as s:
+        s.execute(
+            text("UPDATE users SET mfa_secret = NULL, mfa_enabled_at = NULL WHERE id = :user_id"),
+            {"user_id": current_user.id}
+        )
+        s.commit()
+    
+    session.pop("mfa_verified", None)
+    audit_log("mfa_disabled", user_id=current_user.id)
+    
+    flash("MFA disabled.", "info")
+    return redirect(url_for("index"))
+
+# --- Magic Link Authentication for Candidates ---
+
+@app.route("/candidate/send-magic-link", methods=["POST"])
+@limiter.limit("3 per minute")
+def send_candidate_magic_link():
+    """Send magic link to candidate email."""
+    from app import Candidate
+    
+    email = request.form.get("email", "").strip().lower()
+    
+    if not email:
+        flash("Please provide your email address.", "danger")
+        return redirect(url_for("candidate_login"))
+    
+    with Session(engine) as s:
+        candidate = s.query(Candidate).filter(Candidate.email.ilike(email)).first()
+        
+        if not candidate:
+            # Create new candidate
+            candidate = Candidate(
+                email=email,
+                name=email.split("@")[0]
+            )
+            s.add(candidate)
+            s.commit()
+            s.refresh(candidate)
+        
+        # Generate magic link token
+        token = generate_magic_link_token(candidate.id, candidate.email)
+        magic_link = url_for("candidate_magic_login", token=token, _external=True)
+        
+        # Send email (implement your email sending logic)
+        try:
+            send_magic_link_email(candidate.email, magic_link)
+            audit_log("magic_link_sent", user_id=candidate.id, details={"email": email})
+            flash("Check your email for the sign-in link!", "success")
+        except Exception as e:
+            current_app.logger.error(f"Failed to send magic link: {e}")
+            flash("Failed to send email. Please try again.", "danger")
+    
+    return redirect(url_for("candidate_login"))
+
+
+@app.route("/candidate/login/<token>")
+def candidate_magic_login(token):
+    """Authenticate candidate using magic link token."""
+    from app import Candidate
+    
+    candidate_id, email = verify_magic_link_token(token, max_age=3600)
+    
+    if not candidate_id:
+        audit_log("magic_link_invalid", details={"token": token[:10]})
+        flash("Invalid or expired login link.", "danger")
+        return redirect(url_for("candidate_login"))
+    
+    with Session(engine) as s:
+        candidate = s.get(Candidate, candidate_id)
+        
+        if not candidate or candidate.email.lower() != email.lower():
+            audit_log("magic_link_mismatch", user_id=candidate_id)
+            flash("Invalid login link.", "danger")
+            return redirect(url_for("candidate_login"))
+        
+        # Set session
+        session["candidate_id"] = candidate.id
+        session["candidate_email"] = candidate.email
+        session.permanent = True
+        
+        audit_log("candidate_login_magic_link", user_id=candidate.id)
+        flash(f"Welcome back, {candidate.name}!", "success")
+    
+    return redirect(url_for("candidate_profile", cand_id=candidate.id))
+
+
+def send_magic_link_email(to_email, magic_link):
+    """Send magic link email to candidate."""
+    if not SMTP_HOST or not SMTP_USER:
+        current_app.logger.warning("SMTP not configured, skipping magic link email")
+        return
+    
+    msg = EmailMessage()
+    msg["Subject"] = "Your secure sign-in link"
+    msg["From"] = SMTP_FROM
+    msg["To"] = to_email
+    
+    msg.set_content(f"""
+Hi,
+
+Click the link below to sign in to your account:
+
+{magic_link}
+
+This link will expire in 1 hour.
+
+If you didn't request this, please ignore this email.
+
+Best regards,
+The Talent Team
+    """)
+    
+    try:
+        context = ssl.create_default_context()
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+            server.starttls(context=context)
+            server.login(SMTP_USER, SMTP_PASS)
+            server.send_message(msg)
+    except Exception as e:
+        current_app.logger.error(f"SMTP error: {e}")
+        raise
+
 @app.route("/login", methods=["GET", "POST"])
+@limiter.limit("5 per minute")
 def login():
     form = WorkerLoginForm()
     nxt = request.args.get("next") or url_for("index")
@@ -6215,13 +6450,24 @@ def login():
         email = form.email.data.strip().lower()
         pw = form.password.data
         with Session(engine) as s:
-            row = s.execute(text("SELECT id, name, email, pw_hash FROM users WHERE lower(email)=:e"), {"e": email}).first()
+            row = s.execute(text("SELECT id, name, email, pw_hash, mfa_secret FROM users WHERE lower(email)=:e"), {"e": email}).first()
             if not row or not row[3] or not check_password_hash(row[3], pw):
+                audit_log("login_failed", details={"email": email})
                 flash("Invalid email or password.", "danger")
                 return render_template("auth_login.html", form=form, next=nxt)
             class _Obj: pass
             obj = _Obj(); obj.id, obj.name, obj.email = row[0], row[1], row[2]
             login_user(WorkerUser(obj))
+            
+            audit_log("user_login", user_id=obj.id)
+            
+            # Check if MFA is enabled
+            mfa_secret = row[4] if len(row) > 4 else None
+            if mfa_secret:
+                # Redirect to MFA verification
+                session["mfa_verified"] = False
+                return redirect(url_for("mfa_verify", next=nxt))
+            
         flash("Signed in.", "success")
         return redirect(nxt)
     return render_template("auth_login.html", form=form, next=nxt)
@@ -6229,15 +6475,18 @@ def login():
 @app.route("/logout")
 def logout():
     if current_user.is_authenticated:
+        audit_log("user_logout", user_id=current_user.id)
         logout_user()
     # also clear candidate session in case they shared a browser
     session.pop("candidate_id", None)
     session.pop("candidate_email", None)
+    session.pop("mfa_verified", None)
     flash("Signed out.", "info")
     return redirect(url_for("index"))
 
 # OPTIONAL: simple worker signup (disable in prod or restrict to admins)
 @app.route("/signup", methods=["GET", "POST"])
+@limiter.limit("3 per minute")
 def signup():
     form = WorkerSignupForm()
     if form.validate_on_submit():
