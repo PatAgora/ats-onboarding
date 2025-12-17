@@ -85,8 +85,20 @@ except Exception:
 
 SECRET_KEY = os.getenv("FLASK_SECRET_KEY", "dev-secret")
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///ats.db")
-UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "uploads"))
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# Use /tmp for uploads in Railway (filesystem is read-only except /tmp)
+if os.getenv('RAILWAY_ENVIRONMENT') or os.getenv('FLASK_ENV') == 'production':
+    UPLOAD_FOLDER = "/tmp/uploads"
+else:
+    UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "uploads"))
+
+# Defer directory creation - don't fail at import time
+try:
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+except (OSError, PermissionError) as e:
+    # In Railway, directory creation may fail if filesystem is read-only
+    # Files will use /tmp which always works
+    pass
 
 SECRET_KEY   = os.getenv("FLASK_SECRET_KEY", "dev-secret")
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///ats.db")
