@@ -86,23 +86,6 @@ except Exception:
 SECRET_KEY = os.getenv("FLASK_SECRET_KEY", "dev-secret")
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///ats.db")
 
-# Use /tmp for uploads in Railway (filesystem is read-only except /tmp)
-if os.getenv('RAILWAY_ENVIRONMENT') or os.getenv('FLASK_ENV') == 'production':
-    UPLOAD_FOLDER = "/tmp/uploads"
-else:
-    UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "uploads"))
-
-# Defer directory creation - don't fail at import time
-try:
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-except (OSError, PermissionError) as e:
-    # In Railway, directory creation may fail if filesystem is read-only
-    # Files will use /tmp which always works
-    pass
-
-SECRET_KEY   = os.getenv("FLASK_SECRET_KEY", "dev-secret")
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///ats.db")
-
 SUMSUB_APP_TOKEN = os.getenv("SUMSUB_APP_TOKEN")
 SUMSUB_SECRET_KEY = os.getenv("SUMSUB_SECRET_KEY")
 SUMSUB_BASE_URL = os.getenv("SUMSUB_BASE_URL", "https://api.sumsub.com")
@@ -215,12 +198,22 @@ OPPORTUNITY_STAGES = [
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATE_DIR = BASE_DIR / "templates"
 STATIC_DIR   = BASE_DIR / "static"
-UPLOAD_FOLDER = BASE_DIR / "uploads"
-CV_DIR        = UPLOAD_FOLDER / "cvs"
 
-# Ensure folders exist
-UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
-CV_DIR.mkdir(parents=True, exist_ok=True)
+# Use /tmp for uploads in Railway (read-only filesystem)
+if os.getenv('RAILWAY_ENVIRONMENT') or os.getenv('FLASK_ENV') == 'production':
+    UPLOAD_FOLDER = Path("/tmp/uploads")
+else:
+    UPLOAD_FOLDER = BASE_DIR / "uploads"
+
+CV_DIR = UPLOAD_FOLDER / "cvs"
+
+# Defer directory creation - wrap in try/except to avoid crashes
+try:
+    UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
+    CV_DIR.mkdir(parents=True, exist_ok=True)
+except (OSError, PermissionError):
+    # In Railway, these directories will be created in /tmp on first use
+    pass
 
 app = Flask(
     __name__,
