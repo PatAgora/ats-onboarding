@@ -86,9 +86,8 @@ def init_security(app):
             'payment': "'none'",
         },
         referrer_policy='strict-origin-when-cross-origin',
-        x_content_type_options=True,
-        x_frame_options='SAMEORIGIN',
-        x_xss_protection=True,
+        frame_options='SAMEORIGIN',  # Changed from x_frame_options
+        content_type_options=True,   # Changed from x_content_type_options
     )
     
     # 2. Rate Limiting
