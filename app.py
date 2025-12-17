@@ -101,7 +101,19 @@ SUMSUB_SDK_URLS = [
     "https://static.sumsub.com/idensic/assets/websdk-builder.js",       # newer path
 ]
 
-engine = create_engine(DATABASE_URL, future=True)
+# Database initialization with error handling
+try:
+    engine = create_engine(DATABASE_URL, future=True)
+    # Test connection
+    with engine.connect() as conn:
+        conn.execute(text("SELECT 1"))
+    print(f"✓ Database connected: {DATABASE_URL.split('@')[-1] if '@' in DATABASE_URL else 'local'}")
+except Exception as e:
+    print(f"⚠ Database connection warning: {e}")
+    print(f"⚠ App will start but features requiring DB will fail")
+    # Create engine anyway - Railway needs app to start for healthcheck
+    engine = create_engine(DATABASE_URL, future=True)
+
 Base = declarative_base()
 
 APP_ROOT = Path(__file__).parent.resolve()
@@ -2246,6 +2258,15 @@ def slugify_role(name: str) -> str:
 
 # -------------- Routes --------------
 from sqlalchemy.orm import selectinload  # make sure this import exists
+
+# Health check endpoint (no DB required)
+@app.route("/health")
+def health():
+    """Simple health check endpoint for Railway"""
+    return jsonify({
+        "status": "healthy",
+        "timestamp": datetime.datetime.utcnow().isoformat()
+    }), 200
 
 @app.route("/")
 def index():
