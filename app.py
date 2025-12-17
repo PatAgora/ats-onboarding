@@ -101,18 +101,10 @@ SUMSUB_SDK_URLS = [
     "https://static.sumsub.com/idensic/assets/websdk-builder.js",       # newer path
 ]
 
-# Database initialization with error handling
-try:
-    engine = create_engine(DATABASE_URL, future=True)
-    # Test connection
-    with engine.connect() as conn:
-        conn.execute(text("SELECT 1"))
-    print(f"✓ Database connected: {DATABASE_URL.split('@')[-1] if '@' in DATABASE_URL else 'local'}")
-except Exception as e:
-    print(f"⚠ Database connection warning: {e}")
-    print(f"⚠ App will start but features requiring DB will fail")
-    # Create engine anyway - Railway needs app to start for healthcheck
-    engine = create_engine(DATABASE_URL, future=True)
+# Database initialization - defer connection until first use
+# Don't test connection at import time - Railway filesystem is read-only for SQLite
+# PostgreSQL connections will be tested on first route access
+engine = create_engine(DATABASE_URL, future=True, pool_pre_ping=True)
 
 Base = declarative_base()
 
