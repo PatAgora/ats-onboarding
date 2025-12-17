@@ -19,7 +19,15 @@ import logging
 # Configure audit logger
 audit_logger = logging.getLogger('security_audit')
 audit_logger.setLevel(logging.INFO)
-handler = logging.FileHandler('logs/security_audit.log')
+
+# Use stdout for Railway/production (no filesystem access)
+if os.getenv('RAILWAY_ENVIRONMENT') or os.getenv('FLASK_ENV') == 'production':
+    handler = logging.StreamHandler()  # Log to stdout
+else:
+    # Only use file logging in local dev
+    os.makedirs('logs', exist_ok=True)
+    handler = logging.FileHandler('logs/security_audit.log')
+
 handler.setFormatter(logging.Formatter(
     '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 ))
