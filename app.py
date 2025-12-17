@@ -555,10 +555,6 @@ class Opportunity(Base):
     client_contact_phone = Column(String, default="")
     client_contact_email = Column(String, default="")
 
-from public import public_bp
-app.register_blueprint(public_bp)
-app.secret_key = os.environ.get("FLASK_SECRET", "dev-secret")  # for session
-
 def _basename_safe(name: str) -> str:
     # keep it simple & safe for URLs/filesystems
     import re
@@ -6528,6 +6524,10 @@ def signup():
         flash("Account created. Please sign in.", "success")
         return redirect(url_for("login"))
     return render_template("auth_signup.html", form=form)
+
+# Register public portal blueprint (must be at end after all models are defined)
+from public import public_bp
+app.register_blueprint(public_bp)
 
 if __name__ == "__main__":
     app.run(debug=True)
