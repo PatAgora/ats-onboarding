@@ -86,8 +86,8 @@ def init_security(app):
             'payment': "'none'",
         },
         referrer_policy='strict-origin-when-cross-origin',
-        frame_options='SAMEORIGIN',  # Changed from x_frame_options
-        content_type_options=True,   # Changed from x_content_type_options
+        frame_options='SAMEORIGIN',
+        # Note: content_type_options is enabled by default in Talisman 1.1.0
     )
     
     # 2. Rate Limiting
