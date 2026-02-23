@@ -1,0 +1,1477 @@
+{% extends "base.html" %}
+
+{% block title %}Workflow · Optimus OS1{% endblock %}
+
+{% block head %}
+<style>
+  /* ===== Workflow Page Styles ===== */
+  .workflow-header {
+    background: linear-gradient(135deg, #030a1d 0%, #1e3a8a 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 16px;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  }
+  
+  .workflow-header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0;
+  }
+  
+  .workflow-header p {
+    margin: 0.5rem 0 0 0;
+    opacity: 0.9;
+  }
+  
+  /* Stage Summary Cards - aligned with Kanban */
+  .stage-summary {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.5rem 0 1.5rem 0;
+    margin-bottom: 1rem;
+    overflow-x: auto;
+  }
+  
+  .stage-summary-card {
+    flex: 1 1 0;
+    min-width: 160px;
+    max-width: 200px;
+    background: white;
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border-left: 4px solid #030a1d;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  .stage-summary-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  }
+  
+  .stage-summary-card .stage-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+    background: #f0f4fa;
+    color: #030a1d;
+  }
+  
+  .stage-summary-card .stage-count {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    line-height: 1;
+  }
+  
+  .stage-summary-card .stage-name {
+    font-size: 0.7rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  /* Kanban Board */
+  .kanban-container {
+    display: flex;
+    gap: 0.5rem;
+    padding-bottom: 1rem;
+    flex-wrap: nowrap;
+  }
+  
+  .kanban-column {
+    flex: 1 1 0;
+    min-width: 160px;
+    max-width: 200px;
+    background: #f3f4f6;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .kanban-column-header {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+    background: white;
+    border-radius: 12px 12px 0 0;
+    height: 52px;
+    display: flex;
+    align-items: center;
+  }
+  
+  .kanban-column-header h3 {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #374151;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    width: 100%;
+    line-height: 1.3;
+  }
+  
+  .kanban-column-header h3 .stage-title {
+    flex: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .kanban-column-header .column-count {
+    background: #e5e7eb;
+    color: #374151;
+    font-size: 0.7rem;
+    padding: 0.125rem 0.4rem;
+    border-radius: 9999px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  
+  .kanban-column-body {
+    flex: 1;
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .kanban-column-body:empty::after {
+    content: "No items";
+    color: #9ca3af;
+    font-size: 0.75rem;
+    text-align: center;
+    padding: 1.5rem 0.5rem;
+  }
+  
+  /* Kanban Cards */
+  .kanban-card {
+    background: white;
+    border-radius: 8px;
+    padding: 0.625rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    cursor: grab;
+    transition: transform 0.15s, box-shadow 0.15s;
+    border-left: 4px solid #030a1d;
+    font-size: 0.8rem;
+  }
+  
+  .kanban-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  
+  .kanban-card:active {
+    cursor: grabbing;
+  }
+  
+  .kanban-card.dragging {
+    opacity: 0.5;
+    transform: rotate(3deg);
+  }
+  
+  .kanban-card .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.375rem;
+  }
+  
+  .kanban-card .associate-name {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 0.8rem;
+    margin: 0;
+  }
+  
+  /* Contact Details */
+  .kanban-card .card-contact {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.375rem;
+    border-bottom: 1px solid #f3f4f6;
+  }
+  
+  .kanban-card .contact-item {
+    font-size: 0.65rem;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  
+  .kanban-card .contact-item i {
+    width: 12px;
+    color: #9ca3af;
+  }
+  
+  .kanban-card .contact-item span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  /* Card Details (Client, Engagement, Role, Intake) */
+  .kanban-card .card-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .kanban-card .detail-item {
+    font-size: 0.65rem;
+    display: flex;
+    gap: 0.25rem;
+  }
+  
+  .kanban-card .detail-label {
+    color: #9ca3af;
+    font-weight: 500;
+    min-width: 65px;
+  }
+  
+  .kanban-card .detail-value {
+    color: #374151;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    line-height: 1.3;
+  }
+  
+  /* Vetting Status Bar with RAG */
+  .kanban-card .vetting-status-bar {
+    background: #f9fafb;
+    border-radius: 4px;
+    padding: 0.375rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .kanban-card .vetting-header {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-bottom: 0.25rem;
+  }
+  
+  .kanban-card .vetting-label {
+    font-size: 0.6rem;
+    color: #6b7280;
+    font-weight: 500;
+  }
+  
+  .kanban-card .vetting-count {
+    font-size: 0.6rem;
+    color: #374151;
+    font-weight: 600;
+    margin-left: auto;
+  }
+  
+  .kanban-card .rag-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  
+  .kanban-card .rag-indicator.rag-green {
+    background: #22c55e;
+    box-shadow: 0 0 4px rgba(34, 197, 94, 0.5);
+  }
+  
+  .kanban-card .rag-indicator.rag-amber {
+    background: #f59e0b;
+    box-shadow: 0 0 4px rgba(245, 158, 11, 0.5);
+  }
+  
+  .kanban-card .rag-indicator.rag-red {
+    background: #ef4444;
+    box-shadow: 0 0 4px rgba(239, 68, 68, 0.5);
+  }
+  
+  .kanban-card .rag-indicator.rag-grey {
+    background: #9ca3af;
+  }
+  
+  .kanban-card .vetting-bar {
+    height: 4px;
+    background: #e5e7eb;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  
+  .kanban-card .vetting-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+  }
+  
+  .kanban-card .vetting-fill.rag-green {
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+  }
+  
+  .kanban-card .vetting-fill.rag-amber {
+    background: linear-gradient(90deg, #f59e0b, #d97706);
+  }
+  
+  .kanban-card .vetting-fill.rag-red {
+    background: linear-gradient(90deg, #ef4444, #dc2626);
+  }
+  
+  .kanban-card .vetting-fill.rag-grey {
+    background: #9ca3af;
+  }
+  
+  /* Warning style for placed cards with incomplete vetting */
+  .kanban-card .vetting-status-bar.vetting-warning {
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+  }
+  
+  .kanban-card .candidate-location {
+    font-size: 0.7rem;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.125rem;
+  }
+  
+  .kanban-card .job-badge {
+    font-size: 0.6rem;
+    background: #e8eef8;
+    color: #1e3a8a;
+    padding: 0.125rem 0.375rem;
+    border-radius: 4px;
+    font-weight: 500;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .kanban-card .card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin-top: 0.375rem;
+    padding-top: 0.375rem;
+    border-top: 1px solid #f3f4f6;
+  }
+  
+  .kanban-card .meta-item {
+    font-size: 0.6rem;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    gap: 0.125rem;
+  }
+  
+  .kanban-card .card-actions {
+    display: flex;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+  }
+  
+  .kanban-card .card-actions .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.625rem;
+  }
+  
+  /* Status badges */
+  .status-badge {
+    font-size: 0.625rem;
+    padding: 0.125rem 0.375rem;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+  
+  .status-badge.yes { background: #dcfce7; color: #166534; }
+  .status-badge.maybe { background: #fef3c7; color: #92400e; }
+  .status-badge.no { background: #fee2e2; color: #991b1b; }
+  
+  /* Score indicator */
+  .ai-score {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.625rem;
+    color: #6b7280;
+  }
+  
+  .ai-score .score-bar {
+    width: 40px;
+    height: 4px;
+    background: #e5e7eb;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  
+  .ai-score .score-fill {
+    height: 100%;
+    background: #1e3a8a;
+    border-radius: 2px;
+  }
+  
+  /* Vetting progress */
+  .vetting-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.625rem;
+    color: #6b7280;
+  }
+  
+  .vetting-progress .progress-bar {
+    flex: 1;
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  
+  .vetting-progress .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+    border-radius: 3px;
+  }
+  
+  /* Filters */
+  .workflow-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  
+  .filter-row {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  
+  .workflow-filters .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+    min-width: 120px;
+    max-width: 160px;
+  }
+  
+  .workflow-filters label {
+    font-size: 0.7rem;
+    color: #6b7280;
+    font-weight: 500;
+    height: 16px;
+  }
+  
+  .workflow-filters select,
+  .workflow-filters input {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    width: 100%;
+    height: 34px;
+  }
+  
+  .filter-buttons-group {
+    flex: 0 0 auto;
+    min-width: auto;
+    max-width: none;
+  }
+  
+  .filter-buttons {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .filter-buttons .btn {
+    height: 34px;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+  
+  /* Summary Info Cards */
+  .info-cards-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  
+  .info-card {
+    flex: 1;
+    min-width: 280px;
+    background: white;
+    border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  
+  .info-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  .info-card-header .icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+  }
+  
+  .info-card-header h4 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1f2937;
+  }
+  
+  .info-card-header .badge {
+    margin-left: auto;
+    font-size: 0.75rem;
+  }
+  
+  .info-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .info-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f3f4f6;
+  }
+  
+  .info-stat:last-child {
+    border-bottom: none;
+  }
+  
+  .info-stat .label {
+    font-size: 0.8rem;
+    color: #6b7280;
+  }
+  
+  .info-stat .value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1f2937;
+  }
+  
+  .info-stat .value.warning {
+    color: #f59e0b;
+  }
+  
+  .info-stat .value.success {
+    color: #10b981;
+  }
+  
+  .info-stat .value.danger {
+    color: #ef4444;
+  }
+  
+  .info-list {
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  
+  .info-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: 0.8rem;
+  }
+  
+  .info-list-item:last-child {
+    border-bottom: none;
+  }
+  
+  .info-list-item .name {
+    color: #374151;
+    font-weight: 500;
+  }
+  
+  .info-list-item .days {
+    color: #ef4444;
+    font-size: 0.75rem;
+  }
+  
+  /* Drop zone highlighting */
+  .kanban-column-body.drag-over {
+    background: #e8eef8;
+    border: 2px dashed #1e3a8a;
+    border-radius: 8px;
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .stage-summary {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .kanban-container {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .kanban-column {
+      flex: 0 0 260px;
+      min-width: 260px;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="workflow-header">
+  <div class="d-flex justify-content-between align-items-start">
+    <div>
+      <h1><i class="fas fa-columns me-2"></i>Workflow</h1>
+      <p>Track associates through each stage of the resourcing process</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-light btn-sm" onclick="refreshWorkflow()">
+        <i class="fas fa-sync-alt me-1"></i> Refresh
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Filters -->
+<form id="filterForm" method="GET" action="{{ url_for('workflow') }}" class="workflow-filters">
+  <div class="filter-row">
+    <div class="filter-group">
+      <label for="filterEngStatus">Engagement Status</label>
+      <select id="filterEngStatus" name="eng_status">
+        <option value="active" {% if eng_status_filter == 'active' %}selected{% endif %}>Active Only</option>
+        <option value="all" {% if eng_status_filter == 'all' %}selected{% endif %}>All Time</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="filterOwner">Owner</label>
+      <select id="filterOwner" name="owner">
+        <option value="all">All Owners</option>
+        {% for owner in all_owners %}
+        <option value="{{ owner }}" {% if owner_filter == owner %}selected{% endif %}>{{ owner }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="filterClient">Client</label>
+      <select id="filterClient" name="client">
+        <option value="all">All Clients</option>
+        {% for client in all_clients %}
+        <option value="{{ client }}" {% if client_filter == client %}selected{% endif %}>{{ client }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="filterEngagement">Engagement</label>
+      <select id="filterEngagement" name="engagement">
+        <option value="all">All Engagements</option>
+        {% for eng in all_engagements %}
+        <option value="{{ eng.id }}" {% if engagement_filter == eng.id|string %}selected{% endif %}>{{ eng.name }} ({{ eng.client }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="filterRole">Role</label>
+      <select id="filterRole" name="role">
+        <option value="all">All Roles</option>
+        {% for role in all_roles %}
+        <option value="{{ role }}" {% if role_filter == role %}selected{% endif %}>{{ role }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="filterIntake">Intake</label>
+      <select id="filterIntake" name="intake">
+        <option value="all">All Intakes</option>
+        {% for intake in all_intakes %}
+        <option value="{{ intake }}" {% if intake_filter == intake %}selected{% endif %}>{{ intake }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="searchName">Search</label>
+      <input type="text" id="searchName" placeholder="Search by name..." oninput="applyClientFilter()">
+    </div>
+    <div class="filter-group filter-buttons-group">
+      <label>&nbsp;</label>
+      <div class="filter-buttons">
+        <button type="submit" class="btn btn-primary"><i class="fas fa-filter me-1"></i> Apply</button>
+        <button type="button" class="btn btn-outline-secondary" onclick="clearFilters()"><i class="fas fa-times me-1"></i> Clear</button>
+      </div>
+    </div>
+  </div>
+</form>
+
+<!-- Stage Summary Cards (KPI row) -->
+<div class="stage-summary">
+  {% for stage in stages %}
+  <div class="stage-summary-card" data-stage-summary="{{ stage.id }}">
+    <div class="stage-icon">
+      <i class="fas {{ stage.icon }}"></i>
+    </div>
+    <div class="stage-count">{{ stage.count }}</div>
+    <div class="stage-name">{{ stage.name }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Kanban Board -->
+<div class="kanban-container">
+  {% for stage in stages %}
+  <div class="kanban-column" data-stage="{{ stage.id }}">
+    <div class="kanban-column-header">
+      <h3>
+        <i class="fas {{ stage.icon }}" style="color: {{ stage.color }}; flex-shrink: 0;"></i>
+        <span class="stage-title" title="{{ stage.name }}">{{ stage.name }}</span>
+        <span class="column-count">{{ stage.count }}</span>
+      </h3>
+    </div>
+    <div class="kanban-column-body" 
+         data-stage="{{ stage.id }}"
+         ondrop="handleDrop(event)" 
+         ondragover="handleDragOver(event)" 
+         ondragleave="handleDragLeave(event)">
+      
+      {% for card in stage_data.get(stage.id, []) %}
+      <div class="kanban-card" 
+           draggable="true"
+           data-id="{{ card.id }}"
+           data-type="{{ card.type }}"
+           data-job-id="{{ card.get('job_id', '') }}"
+           data-engagement-id="{{ card.get('engagement_id', '') }}"
+           data-candidate-id="{{ card.candidate_id }}"
+           data-sla-status="{{ card.vetting_progress.sla_status if card.vetting_progress else 'in' }}"
+           data-vetting-complete="{{ card.vetting_progress.complete if card.vetting_progress else 0 }}"
+           data-vetting-total="{{ card.vetting_progress.effective_total if card.vetting_progress else 0 }}"
+           ondragstart="handleDragStart(event)"
+           ondragend="handleDragEnd(event)"
+           style="--card-accent: {{ stage.color }}">
+        
+        <!-- Associate Name -->
+        <div class="card-header">
+          <div>
+            <h4 class="associate-name">{{ card.name }}</h4>
+          </div>
+          {% if card.get('job_title') %}
+          <span class="job-badge" title="{{ card.job_title }}">{{ card.job_title }}</span>
+          {% endif %}
+        </div>
+        
+        <!-- Contact Details -->
+        <div class="card-contact">
+          {% if card.email %}
+          <div class="contact-item" title="{{ card.email }}">
+            <i class="fas fa-envelope"></i>
+            <span>{{ card.email[:20] }}{{ '...' if card.email|length > 20 else '' }}</span>
+          </div>
+          {% endif %}
+          {% if card.phone %}
+          <div class="contact-item">
+            <i class="fas fa-phone"></i>
+            <span>{{ card.phone }}</span>
+          </div>
+          {% endif %}
+        </div>
+        
+        <!-- Client, Engagement, Role, Intake -->
+        <div class="card-details">
+          {% if card.client %}
+          <div class="detail-item">
+            <span class="detail-label">Client:</span>
+            <span class="detail-value">{{ card.client }}</span>
+          </div>
+          {% endif %}
+          {% if card.engagement_name %}
+          <div class="detail-item">
+            <span class="detail-label">Engagement:</span>
+            <span class="detail-value">{{ card.engagement_name }}</span>
+          </div>
+          {% endif %}
+          <div class="detail-item">
+            <span class="detail-label">Intake:</span>
+            <span class="detail-value">{{ card.intake }}</span>
+          </div>
+          {% if card.job_title %}
+          <div class="detail-item">
+            <span class="detail-label">Role:</span>
+            <span class="detail-value">{{ card.job_title }}</span>
+          </div>
+          {% endif %}
+        </div>
+        
+        <!-- Vetting Progress Bar with RAG Status -->
+        {% set vetting_incomplete = card.vetting_progress and card.vetting_progress.complete < card.vetting_progress.effective_total %}
+        {% set is_placed_stage = stage.id == 'placed' %}
+        <div class="vetting-status-bar {% if is_placed_stage and vetting_incomplete %}vetting-warning{% endif %}">
+          {% if card.vetting_progress %}
+          <div class="vetting-header">
+            <span class="vetting-label">Vetting {% if is_placed_stage and vetting_incomplete %}<i class="fas fa-exclamation-triangle" style="color: #f59e0b; margin-left: 0.25rem;" title="Vetting incomplete - action required"></i>{% endif %}</span>
+            <span class="vetting-count">{{ card.vetting_progress.complete }}/{{ card.vetting_progress.effective_total }}</span>
+            <span class="rag-indicator rag-{{ card.vetting_progress.rag }}" title="{{ card.vetting_progress.rag|upper }}"></span>
+          </div>
+          <div class="vetting-bar">
+            <div class="vetting-fill rag-{{ card.vetting_progress.rag }}" style="width: {{ card.vetting_progress.percentage }}%"></div>
+          </div>
+          {% else %}
+          <div class="vetting-header">
+            <span class="vetting-label">Vetting</span>
+            <span class="vetting-count">Not Started</span>
+            <span class="rag-indicator rag-grey" title="No vetting data"></span>
+          </div>
+          <div class="vetting-bar">
+            <div class="vetting-fill rag-grey" style="width: 0%"></div>
+          </div>
+          {% endif %}
+        </div>
+        
+        <div class="card-actions">
+          <a href="{{ url_for('candidate_profile', cand_id=card.candidate_id) }}" 
+             class="btn btn-outline-primary btn-sm" 
+             title="View Profile">
+            <i class="fas fa-user"></i>
+          </a>
+          {% if card.get('job_id') %}
+          <a href="{{ url_for('engagement_job_detail', eng_id=1, job_id=card.job_id) }}" 
+             class="btn btn-outline-secondary btn-sm"
+             title="View Job">
+            <i class="fas fa-briefcase"></i>
+          </a>
+          {% endif %}
+          
+          <!-- Stage-specific action buttons -->
+          {% if stage.id == 'pipeline' %}
+          <button class="btn btn-success btn-sm" onclick="advanceStage({{ card.id }}, 'Shortlist')" title="Pass CV">
+            <i class="fas fa-check"></i>
+          </button>
+          {% elif stage.id == 'shortlist' %}
+          <button class="btn btn-success btn-sm" onclick="advanceStage({{ card.id }}, 'I&A')" title="Pass Tele-screen">
+            <i class="fas fa-phone-alt"></i>
+          </button>
+          {% elif stage.id == 'ia' %}
+          <button class="btn btn-success btn-sm" onclick="advanceStage({{ card.id }}, 'Client Review')" title="Pass I&A">
+            <i class="fas fa-clipboard-check"></i>
+          </button>
+          {% elif stage.id == 'client_review' %}
+          <button class="btn btn-success btn-sm" onclick="advanceStage({{ card.id }}, 'Offered')" title="Make Offer">
+            <i class="fas fa-hand-holding-usd"></i>
+          </button>
+          {% elif stage.id == 'offered' %}
+          <button class="btn btn-success btn-sm" onclick="advanceStage({{ card.id }}, 'Accepted')" title="Accept Offer">
+            <i class="fas fa-thumbs-up"></i>
+          </button>
+          <button class="btn btn-danger btn-sm" onclick="advanceStage({{ card.id }}, 'Rejected')" title="Decline Offer">
+            <i class="fas fa-thumbs-down"></i>
+          </button>
+          {% elif stage.id == 'accepted' %}
+          <button class="btn btn-success btn-sm" onclick="advanceStage({{ card.id }}, 'Ready to Contract')" title="Vetting Complete">
+            <i class="fas fa-shield-alt"></i>
+          </button>
+          {% elif stage.id == 'ready_to_contract' %}
+          <button class="btn btn-success btn-sm" onclick="advanceStage({{ card.id }}, 'Contract Sent')" title="Send Contract">
+            <i class="fas fa-file-signature"></i>
+          </button>
+          {% elif stage.id == 'contract_sent' %}
+          <button class="btn btn-success btn-sm" onclick="advanceStage({{ card.id }}, 'Placed')" title="Contract Signed">
+            <i class="fas fa-check-circle"></i>
+          </button>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+      
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Unsigned Contracts & Vetting Summary Cards -->
+<div class="info-cards-row" style="margin-top: 1.5rem;">
+  <!-- Unsigned Contracts Card -->
+  <div class="info-card">
+    <div class="info-card-header">
+      <div class="icon" style="background: #fee2e2; color: #ef4444;">
+        <i class="fas fa-file-signature"></i>
+      </div>
+      <h4>Unsigned Contracts</h4>
+      <span class="badge bg-{{ 'danger' if unsigned_contracts|length > 0 else 'success' }}">
+        {{ unsigned_contracts|length }}
+      </span>
+    </div>
+    <div class="info-card-body">
+      {% if unsigned_contracts|length == 0 %}
+      <div class="text-center py-3 text-muted">
+        <i class="fas fa-check-circle fa-2x mb-2"></i>
+        <p class="mb-0">All contracts signed</p>
+      </div>
+      {% else %}
+      <div class="info-stat">
+        <span class="label">Contracts Awaiting Signature</span>
+        <span class="value danger">{{ unsigned_contracts|length }}</span>
+      </div>
+      <div class="info-list">
+        {% for item in unsigned_contracts[:5] %}
+        <div class="info-list-item">
+          <span class="name">{{ item.candidate.name }}</span>
+          <span class="days">{{ item.days_pending }} days pending</span>
+        </div>
+        {% endfor %}
+        {% if unsigned_contracts|length > 5 %}
+        <div class="info-list-item text-muted">
+          <span>+ {{ unsigned_contracts|length - 5 }} more...</span>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  
+  <!-- Vetting Summary Card -->
+  <div class="info-card">
+    <div class="info-card-header">
+      <div class="icon" style="background: #e8eef8; color: #1e3a8a;">
+        <i class="fas fa-shield-alt"></i>
+      </div>
+      <h4>Vetting Summary</h4>
+      <span class="badge bg-primary" id="vettingTotalBadge">{{ vetting_summary.total_candidates }}</span>
+    </div>
+    <div class="info-card-body">
+      <!-- SLA Toggle -->
+      <div class="sla-toggle-container" style="margin-bottom: 0.75rem;">
+        <div class="btn-group btn-group-sm w-100" role="group" aria-label="SLA Filter">
+          <button type="button" class="btn btn-outline-secondary sla-toggle-btn active" data-sla="all" onclick="toggleSLAFilter('all')">
+            All
+          </button>
+          <button type="button" class="btn btn-outline-success sla-toggle-btn" data-sla="in" onclick="toggleSLAFilter('in')">
+            <i class="fas fa-check-circle me-1"></i>In SLA ({{ vetting_summary.in_sla|default(0) }})
+          </button>
+          <button type="button" class="btn btn-outline-danger sla-toggle-btn" data-sla="out" onclick="toggleSLAFilter('out')">
+            <i class="fas fa-exclamation-circle me-1"></i>Out ({{ vetting_summary.out_of_sla|default(0) }})
+          </button>
+        </div>
+      </div>
+      
+      <div style="font-size: 0.7rem; color: #9ca3af; margin-bottom: 0.5rem; text-align: center;">
+        SLA: {{ vetting_summary.sla_days|default(7) }} days to complete vetting
+      </div>
+      
+      <div class="info-stat" id="notStartedRow">
+        <span class="label">Not Started (0/10)</span>
+        <span class="value warning" id="notStartedCount">{{ vetting_summary.not_started }}</span>
+      </div>
+      <div class="info-stat" id="inProgressRow">
+        <span class="label">In Progress (1-9/10)</span>
+        <span class="value" style="color: #1e3a8a;" id="inProgressCount"
+              data-all="{{ vetting_summary.in_progress }}"
+              data-in="{{ vetting_summary.in_progress_in_sla|default(0) }}"
+              data-out="{{ vetting_summary.in_progress_out_sla|default(0) }}">{{ vetting_summary.in_progress }}</span>
+      </div>
+      <div class="info-stat" id="completeRow">
+        <span class="label">Complete (10/10)</span>
+        <span class="value success" id="completeCount">{{ vetting_summary.complete }}</span>
+      </div>
+      
+      <!-- By Check Type Chart -->
+      <hr class="my-2">
+      <div style="font-size: 0.75rem; color: #6b7280; font-weight: 500; margin-bottom: 0.5rem;">Outstanding by Check Type</div>
+      <div style="height: 220px; position: relative;">
+        <canvas id="checkTypeChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Check type data for chart - stored as JavaScript objects for SLA filtering
+const checkTypeDataAll = {{ vetting_summary.by_type | tojson | safe }};
+const checkTypeDataInSla = {{ vetting_summary.by_type_in_sla | tojson | safe }};
+const checkTypeDataOutSla = {{ vetting_summary.by_type_out_sla | tojson | safe }};
+
+// Debug: log the data
+console.log('Check Type Data All:', checkTypeDataAll);
+console.log('Check Type Data In SLA:', checkTypeDataInSla);
+console.log('Check Type Data Out SLA:', checkTypeDataOutSla);
+
+// Initialize check type chart
+let checkTypeChart = null;
+let checkTypeFullLabels = [];
+
+function initCheckTypeChart() {
+  const ctx = document.getElementById('checkTypeChart');
+  if (!ctx) return;
+  
+  // Use all data - the backend already filters to in-progress candidates only
+  const data = checkTypeDataAll;
+  if (!data || Object.keys(data).length === 0) {
+    // No data - show message
+    ctx.parentElement.innerHTML = '<div style="text-align: center; color: #9ca3af; padding: 2rem; font-size: 0.8rem;">No in-progress vetting data available</div>';
+    return;
+  }
+  
+  checkTypeFullLabels = Object.keys(data);
+  
+  const labels = checkTypeFullLabels.map(label => {
+    // Shorten labels for display
+    return label.length > 18 ? label.substring(0, 15) + '...' : label;
+  });
+  
+  // For each check type, show only outstanding (not complete) checks
+  const outstandingData = Object.values(data).map(d => (d.in_progress || 0) + (d.not_started || 0));
+  
+  checkTypeChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Outstanding',
+          data: outstandingData,
+          backgroundColor: 'rgba(239, 68, 68, 0.75)',
+          borderColor: 'rgb(239, 68, 68)',
+          borderWidth: 1,
+          borderRadius: 3
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y',
+      scales: {
+        x: {
+          beginAtZero: true,
+          ticks: {
+            font: { size: 9 },
+            stepSize: 1
+          },
+          grid: {
+            color: 'rgba(0,0,0,0.05)'
+          }
+        },
+        y: {
+          ticks: {
+            font: { size: 9 },
+            color: '#374151'
+          },
+          grid: {
+            display: false
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          callbacks: {
+            title: function(context) {
+              return checkTypeFullLabels[context[0].dataIndex];
+            },
+            label: function(context) {
+              return `${context.raw} outstanding`;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function updateCheckTypeChart(filter) {
+  if (!checkTypeChart) return;
+  
+  let data;
+  if (filter === 'in') {
+    data = checkTypeDataInSla;
+  } else if (filter === 'out') {
+    data = checkTypeDataOutSla;
+  } else {
+    data = checkTypeDataAll;
+  }
+  
+  if (!data || Object.keys(data).length === 0) {
+    // Clear chart data if no data for this filter
+    checkTypeChart.data.labels = [];
+    checkTypeChart.data.datasets[0].data = [];
+    checkTypeChart.update();
+    return;
+  }
+  
+  checkTypeFullLabels = Object.keys(data);
+  
+  const labels = checkTypeFullLabels.map(label => {
+    return label.length > 18 ? label.substring(0, 15) + '...' : label;
+  });
+  
+  // Show only outstanding checks
+  const outstandingData = Object.values(data).map(d => (d.in_progress || 0) + (d.not_started || 0));
+  
+  checkTypeChart.data.labels = labels;
+  checkTypeChart.data.datasets[0].data = outstandingData;
+  checkTypeChart.update();
+}
+
+// Initialize chart on page load
+document.addEventListener('DOMContentLoaded', function() {
+  initCheckTypeChart();
+});
+
+// Drag and Drop functionality
+let draggedCard = null;
+let originalColumn = null;
+
+function handleDragStart(event) {
+  draggedCard = event.target;
+  originalColumn = event.target.closest('.kanban-column-body').dataset.stage;
+  event.target.classList.add('dragging');
+  event.dataTransfer.effectAllowed = 'move';
+  event.dataTransfer.setData('text/plain', JSON.stringify({
+    id: event.target.dataset.id,
+    type: event.target.dataset.type
+  }));
+}
+
+function handleDragEnd(event) {
+  event.target.classList.remove('dragging');
+  document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+}
+
+function handleDragOver(event) {
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'move';
+  event.currentTarget.classList.add('drag-over');
+}
+
+function handleDragLeave(event) {
+  event.currentTarget.classList.remove('drag-over');
+}
+
+function handleDrop(event) {
+  event.preventDefault();
+  event.currentTarget.classList.remove('drag-over');
+  
+  const targetColumn = event.currentTarget;
+  const targetStage = targetColumn.dataset.stage;
+  
+  if (!draggedCard || targetStage === originalColumn) {
+    return;
+  }
+  
+  const cardData = JSON.parse(event.dataTransfer.getData('text/plain'));
+  
+  // Move the card visually first for better UX
+  targetColumn.appendChild(draggedCard);
+  
+  // Update the server
+  fetch('/api/workflow/move', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'same-origin',  // Include session cookies
+    body: JSON.stringify({
+      card_id: cardData.id,
+      card_type: cardData.type,
+      from_stage: originalColumn,
+      to_stage: targetStage
+    })
+  })
+  .then(async response => {
+    const contentType = response.headers.get('content-type');
+    
+    // Check if response is JSON
+    if (!contentType || !contentType.includes('application/json')) {
+      // Not JSON - likely a redirect to login page
+      throw new Error('Session expired. Please refresh the page and log in again.');
+    }
+    
+    const data = await response.json();
+    
+    if (!response.ok || data.error) {
+      throw new Error(data.error || 'Server error');
+    }
+    
+    return data;
+  })
+  .then(data => {
+    showToast('Card moved successfully', 'success');
+    // Reload the page to show updated data and counts
+    setTimeout(() => window.location.reload(), 500);
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    // Revert the visual move
+    const originalColumnEl = document.querySelector(`[data-stage="${originalColumn}"]`);
+    if (originalColumnEl && draggedCard) {
+      originalColumnEl.appendChild(draggedCard);
+    }
+    showToast(error.message || 'Failed to move card', 'danger');
+  });
+}
+
+// Update column counts and summary cards after drag or filter
+function updateColumnCounts() {
+  document.querySelectorAll('.kanban-column').forEach(column => {
+    const stageId = column.dataset.stage;
+    const body = column.querySelector('.kanban-column-body');
+    
+    // Count only visible cards (not filtered out)
+    const visibleCards = body.querySelectorAll('.kanban-card:not([style*="display: none"])');
+    const count = visibleCards.length;
+    
+    // Update column header count
+    const countBadge = column.querySelector('.column-count');
+    if (countBadge) {
+      countBadge.textContent = count;
+    }
+    
+    // Update the corresponding summary card at the top
+    const summaryCard = document.querySelector(`[data-stage-summary="${stageId}"]`);
+    if (summaryCard) {
+      const summaryCount = summaryCard.querySelector('.stage-count');
+      if (summaryCount) {
+        summaryCount.textContent = count;
+        // Add a brief highlight animation
+        summaryCard.style.transform = 'scale(1.05)';
+        summaryCard.style.transition = 'transform 0.2s ease';
+        setTimeout(() => {
+          summaryCard.style.transform = '';
+        }, 300);
+      }
+    }
+  });
+}
+
+// Client-side search filter (instant)
+function applyClientFilter() {
+  const searchFilter = document.getElementById('searchName').value.toLowerCase();
+  
+  document.querySelectorAll('.kanban-card').forEach(card => {
+    let show = true;
+    
+    // Name search
+    if (searchFilter) {
+      const name = card.querySelector('.associate-name').textContent.toLowerCase();
+      if (!name.includes(searchFilter)) {
+        show = false;
+      }
+    }
+    
+    card.style.display = show ? '' : 'none';
+  });
+  
+  updateColumnCounts();
+}
+
+// Clear all filters
+function clearFilters() {
+  window.location.href = '{{ url_for("workflow") }}';
+}
+
+// Advance card to next stage via button click
+function advanceStage(cardId, newStatus) {
+  // Confirm action for certain stages
+  const confirmMessages = {
+    'Rejected': 'Are you sure you want to reject this associate?',
+    'Withdrawn': 'Are you sure you want to mark this as withdrawn?',
+    'Placed': 'Confirm contract has been signed and associate is placed?'
+  };
+  
+  if (confirmMessages[newStatus]) {
+    if (!confirm(confirmMessages[newStatus])) {
+      return;
+    }
+  }
+  
+  fetch('/api/workflow/move', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      card_id: cardId,
+      card_type: 'application',
+      to_stage: newStatus.toLowerCase().replace(/ /g, '_').replace('&', ''),
+      new_status: newStatus
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.error) {
+      showToast('Error: ' + data.error, 'danger');
+    } else {
+      showToast('Stage updated successfully', 'success');
+      // Reload the page to show updated data
+      setTimeout(() => window.location.reload(), 500);
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showToast('Failed to update stage', 'danger');
+  });
+}
+
+// Refresh the workflow page
+function refreshWorkflow() {
+  window.location.reload();
+}
+
+// Show card context menu
+function showCardMenu(event, cardId, cardType) {
+  event.stopPropagation();
+  // Could implement a dropdown menu here for additional actions
+  console.log('Card menu for:', cardId, cardType);
+}
+
+// Toast notifications
+function showToast(message, type = 'info') {
+  // Simple toast implementation
+  const toast = document.createElement('div');
+  toast.className = `alert alert-${type} position-fixed bottom-0 end-0 m-3`;
+  toast.style.zIndex = '9999';
+  toast.innerHTML = message;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+// SLA Toggle functionality
+let currentSLAFilter = 'all';
+
+function toggleSLAFilter(filter) {
+  currentSLAFilter = filter;
+  
+  // Update button states
+  document.querySelectorAll('.sla-toggle-btn').forEach(btn => {
+    btn.classList.remove('active');
+    if (btn.dataset.sla === filter) {
+      btn.classList.add('active');
+    }
+  });
+  
+  // Filter kanban cards based on SLA status
+  const allCards = document.querySelectorAll('.kanban-card');
+  let visibleCount = 0;
+  
+  allCards.forEach(card => {
+    const slaStatus = card.dataset.slaStatus || '';
+    const vettingComplete = parseInt(card.dataset.vettingComplete) || 0;
+    const vettingTotal = parseInt(card.dataset.vettingTotal) || 0;
+    
+    // Determine if this is an in-progress candidate (1 to total-1 complete)
+    const isInProgress = vettingComplete > 0 && vettingComplete < vettingTotal;
+    
+    let showCard = true;
+    
+    if (filter === 'in') {
+      // Show only in-progress cards that are in SLA
+      showCard = isInProgress && slaStatus === 'in';
+    } else if (filter === 'out') {
+      // Show only in-progress cards that are out of SLA
+      showCard = isInProgress && slaStatus === 'out';
+    }
+    // filter === 'all' shows everything
+    
+    card.style.display = showCard ? '' : 'none';
+    if (showCard) visibleCount++;
+  });
+  
+  // Update column counts
+  updateColumnCounts();
+  
+  // Update summary counts based on filter
+  updateSummaryCounts(filter);
+  
+  // Update check type chart
+  updateCheckTypeChart(filter);
+  
+  // Show toast message
+  if (filter === 'in') {
+    showToast(`<i class="fas fa-check-circle me-1"></i> Showing ${visibleCount} candidates In SLA`, 'success');
+  } else if (filter === 'out') {
+    showToast(`<i class="fas fa-exclamation-circle me-1"></i> Showing ${visibleCount} candidates Out of SLA`, 'warning');
+  } else {
+    showToast('<i class="fas fa-list me-1"></i> Showing all candidates', 'info');
+  }
+}
+
+// Update summary counts based on SLA filter
+function updateSummaryCounts(filter) {
+  const notStartedRow = document.getElementById('notStartedRow');
+  const inProgressEl = document.getElementById('inProgressCount');
+  const completeRow = document.getElementById('completeRow');
+  const totalBadge = document.getElementById('vettingTotalBadge');
+  
+  if (filter === 'all') {
+    // Show all rows with full counts
+    if (notStartedRow) notStartedRow.style.display = '';
+    if (completeRow) completeRow.style.display = '';
+    if (inProgressEl) inProgressEl.textContent = inProgressEl.dataset.all;
+    
+    // Update total badge
+    if (totalBadge) {
+      const notStarted = {{ vetting_summary.not_started }};
+      const inProgress = parseInt(inProgressEl?.dataset.all || 0);
+      const complete = {{ vetting_summary.complete }};
+      totalBadge.textContent = notStarted + inProgress + complete;
+    }
+  } else {
+    // SLA filter: hide Not Started and Complete (they don't have SLA)
+    if (notStartedRow) notStartedRow.style.display = 'none';
+    if (completeRow) completeRow.style.display = 'none';
+    
+    // Update In Progress count based on SLA filter
+    if (inProgressEl) {
+      inProgressEl.textContent = inProgressEl.dataset[filter] || '0';
+    }
+    
+    // Update total badge to show only in-progress count for SLA filter
+    if (totalBadge) {
+      totalBadge.textContent = inProgressEl?.dataset[filter] || '0';
+    }
+  }
+}
+</script>
+{% endblock %}

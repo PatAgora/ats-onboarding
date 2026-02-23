@@ -1,0 +1,1459 @@
+{% extends "base.html" %}
+
+{% block title %}Projects · Optimus OS1{% endblock %}
+
+{% block head %}
+<style>
+  /* ===== Projects Page Styles ===== */
+  .projects-header {
+    background: linear-gradient(135deg, #030a1d 0%, #1e3a8a 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 16px;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  }
+  
+  .projects-header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0;
+  }
+  
+  .projects-header p {
+    margin: 0.5rem 0 0 0;
+    opacity: 0.9;
+  }
+  
+  /* Summary Cards */
+  .summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .summary-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border-left: 4px solid #030a1d;
+  }
+  
+  .summary-card .card-label {
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+  }
+  
+  .summary-card .card-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1f2937;
+  }
+  
+  .summary-card .card-value.currency::before {
+    content: "£";
+    font-size: 1.25rem;
+    font-weight: 500;
+    margin-right: 0.125rem;
+  }
+  
+  /* Filter Sections - Matching Dashboard Style */
+  .filter-section {
+    background: white;
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  
+  .filter-section h3 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    margin: 0 0 1rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .filter-section h3 i {
+    color: #1e3a8a;
+  }
+  
+  .filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-end;
+  }
+  
+  .filter-group {
+    flex: 1;
+    min-width: 150px;
+    max-width: 200px;
+  }
+  
+  .filter-group label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.375rem;
+  }
+  
+  .filter-group select,
+  .filter-group input {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    color: #374151;
+    background: white;
+    transition: all 0.15s ease;
+  }
+  
+  .filter-group select:focus,
+  .filter-group input:focus {
+    outline: none;
+    border-color: #1e3a8a;
+  }
+  
+  .filter-group select[multiple] {
+    height: auto;
+    min-height: 60px;
+    max-height: 120px;
+  }
+  
+  /* Custom Dropdown Multi-Select Styles */
+  .dropdown-multiselect {
+    position: relative;
+  }
+  
+  .dropdown-multiselect-btn {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    color: #374151;
+    background: white;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: border-color 0.15s ease;
+  }
+  
+  .dropdown-multiselect-btn:hover {
+    border-color: #d1d5db;
+  }
+  
+  .dropdown-multiselect-btn:focus {
+    outline: none;
+    border-color: #1e3a8a;
+  }
+  
+  .dropdown-multiselect-btn .selected-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+  }
+  
+  .dropdown-multiselect-btn .dropdown-arrow {
+    margin-left: 0.5rem;
+    color: #9ca3af;
+    transition: transform 0.2s ease;
+  }
+  
+  .dropdown-multiselect.open .dropdown-arrow {
+    transform: rotate(180deg);
+  }
+  
+  .dropdown-multiselect-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1000;
+    max-height: 250px;
+    overflow-y: auto;
+    display: none;
+    margin-top: 4px;
+  }
+  
+  .dropdown-multiselect.open .dropdown-multiselect-menu {
+    display: block;
+  }
+  
+  .dropdown-multiselect-item {
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background 0.1s ease;
+  }
+  
+  .dropdown-multiselect-item:hover {
+    background: #f3f4f6;
+  }
+  
+  .dropdown-multiselect-item.selected {
+    background: #e8eef8;
+  }
+  
+  .dropdown-multiselect-item input[type="checkbox"] {
+    accent-color: #1e3a8a;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
+  
+  .dropdown-multiselect-item input[type="checkbox"]:focus {
+    outline: none;
+    box-shadow: none;
+  }
+  
+  .dropdown-multiselect-item label {
+    cursor: pointer;
+    margin: 0;
+    font-size: 0.875rem;
+    color: #374151;
+    text-transform: none;
+    font-weight: normal;
+    letter-spacing: normal;
+  }
+  
+  .selected-count {
+    background: #1e3a8a;
+    color: white;
+    padding: 0.125rem 0.375rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-left: 0.25rem;
+  }
+  
+  /* Remove blue cursor/pointer and focus ring effects */
+  * {
+    cursor: default;
+  }
+  
+  *:focus {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+  
+  *:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+  
+  a, button, .action-btn, .filter-btn, .dropdown-multiselect-btn, 
+  .dropdown-multiselect-item, input, select, textarea, 
+  [onclick], [role="button"] {
+    cursor: pointer;
+  }
+  
+  input[type="text"], input[type="date"], input[type="number"], textarea {
+    cursor: text;
+  }
+  
+  .filter-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  
+  .filter-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  
+  .filter-btn-apply {
+    background: linear-gradient(135deg, #030a1d 0%, #1e3a8a 100%);
+    color: white;
+  }
+  
+  .filter-btn-apply:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+  }
+  
+  .filter-btn-clear {
+    background: white;
+    border-color: #e5e7eb;
+    color: #6b7280;
+  }
+  
+  .filter-btn-clear:hover {
+    border-color: #d1d5db;
+    color: #374151;
+    background: #f9fafb;
+  }
+  
+  /* Pipeline Kanban */
+  .pipeline-container {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .pipeline-stage {
+    min-width: 220px;
+    max-width: 260px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .pipeline-stage-header {
+    padding: 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  .pipeline-stage-header h3 {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #374151;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .pipeline-stage-header .count {
+    background: #e5e7eb;
+    color: #4b5563;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  
+  .stage-qualified-lead .pipeline-stage-header { border-top: 3px solid #3b82f6; }
+  .stage-proposal .pipeline-stage-header { border-top: 3px solid #f59e0b; }
+  .stage-procurement .pipeline-stage-header { border-top: 3px solid #8b5cf6; }
+  .stage-closed-won .pipeline-stage-header { border-top: 3px solid #10b981; }
+  .stage-closed-lost .pipeline-stage-header { border-top: 3px solid #ef4444; }
+  
+  .pipeline-stage-body {
+    padding: 0.5rem;
+    flex: 1;
+    overflow-y: auto;
+    max-height: 400px;
+    min-height: 60px;
+    transition: background 0.2s, border 0.2s;
+  }
+  
+  .pipeline-stage-body.drag-over {
+    background: rgba(30, 58, 138, 0.08);
+    border: 2px dashed #1e3a8a;
+    border-radius: 0 0 12px 12px;
+  }
+  
+  .project-card {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 0.5rem 0.625rem;
+    margin-bottom: 0.375rem;
+    cursor: grab;
+    transition: all 0.15s;
+    border-left: 3px solid #1e3a8a;
+  }
+  
+  .project-card:hover {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  
+  .project-card:active {
+    cursor: grabbing;
+  }
+  
+  .project-card.dragging {
+    opacity: 0.5;
+    transform: rotate(2deg);
+  }
+  
+  .project-card .project-name {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 0.75rem;
+    margin-bottom: 0.125rem;
+    line-height: 1.2;
+  }
+  
+  .project-card .project-client {
+    font-size: 0.65rem;
+    color: #6b7280;
+    margin-bottom: 0.25rem;
+  }
+  
+  .project-card .project-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.65rem;
+    color: #6b7280;
+  }
+  
+  .project-card .project-value {
+    font-weight: 600;
+    color: #059669;
+  }
+  
+  .project-card .project-dates {
+    font-size: 0.6rem;
+  }
+  
+  /* Table Container */
+  .table-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+  
+  .table-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  
+  .table-header h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .table-header h2 i {
+    color: #1e3a8a;
+  }
+  
+  .table-header .subtitle {
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-weight: normal;
+    margin-left: 0.5rem;
+  }
+  
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .data-table th {
+    background: #f9fafb;
+    padding: 0.875rem 1rem;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  .data-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: 0.875rem;
+    color: #374151;
+  }
+  
+  .data-table tbody tr:hover {
+    background: #f9fafb;
+  }
+  
+  .status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  
+  .status-indicator.active {
+    background: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+  }
+  
+  .status-indicator.draft {
+    background: #f59e0b;
+  }
+  
+  .status-indicator.completed {
+    background: #6b7280;
+  }
+  
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+  
+  .status-badge.active {
+    background: #dcfce7;
+    color: #166534;
+  }
+  
+  .status-badge.qualified-lead { background: #dbeafe; color: #1e40af; }
+  .status-badge.proposal { background: #fef3c7; color: #92400e; }
+  .status-badge.procurement { background: #ede9fe; color: #6b21a8; }
+  .status-badge.closed-won { background: #dcfce7; color: #166534; }
+  .status-badge.closed-lost { background: #fee2e2; color: #991b1b; }
+  
+  .ref-badge {
+    background: #f0f4fa;
+    color: #1e3a8a;
+    padding: 0.125rem 0.375rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    font-family: monospace;
+  }
+  
+  .action-btn {
+    padding: 0.375rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: #1e3a8a;
+    color: white;
+    text-decoration: none;
+  }
+  
+  .action-btn:hover {
+    background: #1e3a8a;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(30, 58, 138, 0.3);
+  }
+  
+  /* Empty State */
+  .empty-state {
+    text-align: center;
+    padding: 2rem;
+    color: #6b7280;
+  }
+  
+  .empty-state i {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+  
+  /* Responsive */
+  @media (max-width: 1024px) {
+    .pipeline-container {
+      flex-wrap: nowrap;
+    }
+    
+    .table-container {
+      overflow-x: auto;
+    }
+    
+    .data-table {
+      min-width: 800px;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .filter-group {
+      flex: 1 1 100%;
+      max-width: 100%;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 pt-3 pb-4">
+<!-- Page Header -->
+<div class="projects-header">
+  <div class="d-flex justify-content-between align-items-start">
+    <div>
+      <h1><i class="fas fa-project-diagram me-2"></i>Projects</h1>
+      <p>Pipeline overview and active engagement tracking</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('opportunities_') }}" class="btn btn-light btn-sm">
+        <i class="fas fa-list me-1"></i> All Opportunities
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Main Filters Section -->
+<div class="filter-section" style="margin-bottom: 1.5rem;">
+  <div class="filter-row">
+    <div class="filter-group">
+      <label>Client</label>
+      <div class="dropdown-multiselect" id="main-client-dropdown">
+        <button type="button" class="dropdown-multiselect-btn" onclick="toggleDropdown('main-client-dropdown')">
+          <span class="selected-text">All Clients</span>
+          <i class="fas fa-chevron-down dropdown-arrow"></i>
+        </button>
+        <div class="dropdown-multiselect-menu">
+          {% for client in all_clients %}
+          <div class="dropdown-multiselect-item" onclick="toggleOption(this, 'main-client-dropdown')">
+            <input type="checkbox" id="main-client-{{ loop.index }}" value="{{ client }}">
+            <label for="main-client-{{ loop.index }}">{{ client }}</label>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    <div class="filter-group">
+      <label>Engagement Name</label>
+      <div class="dropdown-multiselect" id="main-engagement-dropdown">
+        <button type="button" class="dropdown-multiselect-btn" onclick="toggleDropdown('main-engagement-dropdown')">
+          <span class="selected-text">All Engagements</span>
+          <i class="fas fa-chevron-down dropdown-arrow"></i>
+        </button>
+        <div class="dropdown-multiselect-menu">
+          {% for eng in engagements %}
+          <div class="dropdown-multiselect-item" onclick="toggleOption(this, 'main-engagement-dropdown')">
+            <input type="checkbox" id="main-engagement-{{ loop.index }}" value="{{ eng.name }}">
+            <label for="main-engagement-{{ loop.index }}">{{ eng.name }}</label>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    <div class="filter-group">
+      <label>Ref</label>
+      <div class="dropdown-multiselect" id="main-ref-dropdown">
+        <button type="button" class="dropdown-multiselect-btn" onclick="toggleDropdown('main-ref-dropdown')">
+          <span class="selected-text">All Refs</span>
+          <i class="fas fa-chevron-down dropdown-arrow"></i>
+        </button>
+        <div class="dropdown-multiselect-menu">
+          {% for eng in engagements %}
+          {% if eng.ref %}
+          <div class="dropdown-multiselect-item" onclick="toggleOption(this, 'main-ref-dropdown')">
+            <input type="checkbox" id="main-ref-{{ loop.index }}" value="{{ eng.ref }}">
+            <label for="main-ref-{{ loop.index }}">{{ eng.ref }}</label>
+          </div>
+          {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    <div class="filter-group">
+      <label>Status</label>
+      <div class="dropdown-multiselect" id="main-status-dropdown">
+        <button type="button" class="dropdown-multiselect-btn" onclick="toggleDropdown('main-status-dropdown')">
+          <span class="selected-text">All Statuses</span>
+          <i class="fas fa-chevron-down dropdown-arrow"></i>
+        </button>
+        <div class="dropdown-multiselect-menu">
+          <div class="dropdown-multiselect-item" onclick="toggleOption(this, 'main-status-dropdown')">
+            <input type="checkbox" id="main-status-active" value="Active">
+            <label for="main-status-active">Active</label>
+          </div>
+          <div class="dropdown-multiselect-item" onclick="toggleOption(this, 'main-status-dropdown')">
+            <input type="checkbox" id="main-status-draft" value="Draft">
+            <label for="main-status-draft">Draft</label>
+          </div>
+          <div class="dropdown-multiselect-item" onclick="toggleOption(this, 'main-status-dropdown')">
+            <input type="checkbox" id="main-status-completed" value="Completed">
+            <label for="main-status-completed">Completed</label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="filter-row" style="margin-top: 1rem;">
+    <div class="filter-group" style="min-width: 180px;">
+      <label>Start Date From</label>
+      <input type="date" id="main-start-from" class="form-control" style="padding: 0.5rem 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px;">
+    </div>
+    <div class="filter-group" style="min-width: 180px;">
+      <label>Start Date To</label>
+      <input type="date" id="main-start-to" class="form-control" style="padding: 0.5rem 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px;">
+    </div>
+    <div class="filter-group" style="min-width: 180px;">
+      <label>End Date From</label>
+      <input type="date" id="main-end-from" class="form-control" style="padding: 0.5rem 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px;">
+    </div>
+    <div class="filter-group" style="min-width: 180px;">
+      <label>End Date To</label>
+      <input type="date" id="main-end-to" class="form-control" style="padding: 0.5rem 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px;">
+    </div>
+    <div class="filter-actions">
+      <button type="button" class="filter-btn filter-btn-apply" onclick="applyMainFilters()">
+        <i class="fas fa-filter me-1"></i> Apply
+      </button>
+      <button type="button" class="filter-btn filter-btn-clear" onclick="clearMainFilters()">
+        <i class="fas fa-times me-1"></i> Clear
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="summary-cards">
+  <div class="summary-card" style="--card-color: #1e3a8a">
+    <div class="card-label">Pipeline Projects</div>
+    <div class="card-value">{{ total_pipeline }}</div>
+  </div>
+  <div class="summary-card" style="--card-color: #10b981">
+    <div class="card-label">Total Value</div>
+    <div class="card-value currency">{{ "{:,.0f}".format(total_value) }}</div>
+  </div>
+  <div class="summary-card" style="--card-color: #f59e0b">
+    <div class="card-label">Weighted Value</div>
+    <div class="card-value currency">{{ "{:,.0f}".format(weighted_value) }}</div>
+  </div>
+  <div class="summary-card" style="--card-color: #1e3a8a">
+    <div class="card-label">Active Engagements</div>
+    <div class="card-value">{{ active_engagements|length }}</div>
+  </div>
+</div>
+
+<!-- Pipeline Kanban -->
+<h2 class="mb-3" style="font-size: 1rem; font-weight: 600; color: #374151;">
+  <i class="fas fa-funnel-dollar me-2 text-muted"></i>Sales Pipeline
+  <small class="text-muted" style="font-size: 0.75rem; font-weight: normal; margin-left: 0.5rem;">
+    <i class="fas fa-arrows-alt"></i> Drag cards to change stage
+  </small>
+</h2>
+<div class="pipeline-container">
+  {% for stage in pipeline_stages %}
+  <div class="pipeline-stage stage-{{ stage.lower().replace(' ', '-') }}" data-stage="{{ stage }}">
+    <div class="pipeline-stage-header">
+      <h3>
+        {{ stage }}
+        <span class="count" id="count-{{ stage.lower().replace(' ', '-') }}">{{ stage_data[stage]|length }}</span>
+      </h3>
+    </div>
+    <div class="pipeline-stage-body" 
+         data-stage="{{ stage }}"
+         ondrop="handlePipelineDrop(event)"
+         ondragover="handlePipelineDragOver(event)"
+         ondragleave="handlePipelineDragLeave(event)">
+      {% if stage_data[stage] %}
+        {% for opp in stage_data[stage] %}
+        <div class="project-card" 
+             draggable="true"
+             data-id="{{ opp.id }}"
+             data-stage="{{ stage }}"
+             data-name="{{ opp.name or '' }}"
+             data-client="{{ opp.client or '' }}"
+             ondragstart="handlePipelineDragStart(event)"
+             ondragend="handlePipelineDragEnd(event)"
+             onclick="viewOpportunity({{ opp.id }})">
+          <div class="project-name">{{ opp.name or 'Untitled' }}</div>
+          <div class="project-client">{{ opp.client or 'No client' }}</div>
+          <div class="project-meta">
+            <span class="project-value">
+              {% if opp.est_value %}£{{ "{:,.0f}".format(opp.est_value) }}{% else %}—{% endif %}
+            </span>
+            <span class="project-dates">
+              {% if opp.est_start %}
+              Est: {{ opp.est_start.strftime('%d %b') }}
+              {% endif %}
+            </span>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state empty-placeholder" style="padding: 1rem;">
+          <i class="fas fa-inbox" style="font-size: 1.5rem;"></i>
+          <p style="font-size: 0.75rem; margin: 0.5rem 0 0 0;">No projects</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Pipeline/Opportunities Table -->
+<div class="table-container">
+  <div class="table-header">
+    <h2>
+      <i class="fas fa-chart-line"></i>
+      Pipeline / Opportunities
+      <span class="subtitle">Track all opportunities in the pipeline</span>
+    </h2>
+  </div>
+  
+  <!-- Pipeline Table -->
+  <table class="data-table" id="pipeline-table">
+    <thead>
+      <tr>
+        <th>Opportunity Name</th>
+        <th>Client</th>
+        <th>Stage</th>
+        <th>Est. Value</th>
+        <th>Est. Start</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for opp in opportunities %}
+      <tr data-opp-id="{{ opp.id }}"
+          data-client="{{ opp.client or '' }}" 
+          data-name="{{ opp.name or '' }}" 
+          data-stage="{{ opp.stage or 'Lead' }}"
+          data-est-start="{{ opp.est_start.strftime('%Y-%m-%d') if opp.est_start else '' }}">
+        <td style="font-weight: 500;">{{ opp.name or 'Untitled' }}</td>
+        <td>{{ opp.client or '—' }}</td>
+        <td>
+          <span class="status-badge {{ (opp.stage or 'lead').lower().replace(' ', '-') }}">
+            {{ opp.stage or 'Lead' }}
+          </span>
+        </td>
+        <td style="font-weight: 600; color: #059669;">
+          {% if opp.est_value %}£{{ "{:,.0f}".format(opp.est_value) }}{% else %}—{% endif %}
+        </td>
+        <td>{{ opp.est_start.strftime('%d/%m/%Y') if opp.est_start else '—' }}</td>
+        <td>
+          <a href="{{ url_for('opportunity_edit', opp_id=opp.id) }}" class="action-btn">
+            <i class="fas fa-arrow-right"></i> View
+          </a>
+        </td>
+      </tr>
+      {% else %}
+      <tr class="empty-row">
+        <td colspan="6">
+          <div class="empty-state">
+            <i class="fas fa-chart-line"></i>
+            <p>No opportunities in pipeline</p>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Current Engagements Table -->
+<div class="table-container">
+  <div class="table-header">
+    <h2>
+      <i class="fas fa-briefcase"></i>
+      Current Engagements
+      <span class="subtitle">Live delivery work in progress</span>
+    </h2>
+  </div>
+  
+  <!-- Engagements Table -->
+  <table class="data-table" id="engagements-table">
+    <thead>
+      <tr>
+        <th style="width: 40px;">Status</th>
+        <th>Ref</th>
+        <th>Name</th>
+        <th>Client</th>
+        <th>Status</th>
+        <th>Start</th>
+        <th>End</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for eng in engagements %}
+      <tr data-client="{{ eng.client or '' }}"
+          data-name="{{ eng.name or '' }}"
+          data-ref="{{ eng.ref or '' }}"
+          data-status="{{ eng.status or 'Active' }}"
+          data-roles="{{ engagement_roles.get(eng.id, [])|join(',') }}"
+          data-start="{{ eng.start_date.strftime('%Y-%m-%d') if eng.start_date else '' }}"
+          data-end="{{ eng.end_date.strftime('%Y-%m-%d') if eng.end_date else '' }}">
+        <td>
+          <span class="status-indicator {% if eng.status == 'Active' %}active{% elif eng.status == 'Completed' %}completed{% else %}draft{% endif %}" title="{{ eng.status or 'Active' }}"></span>
+        </td>
+        <td>
+          <span class="ref-badge">{{ eng.ref or '—' }}</span>
+        </td>
+        <td style="font-weight: 500;">{{ eng.name or 'Unnamed Engagement' }}</td>
+        <td>{{ eng.client or '—' }}</td>
+        <td>
+          <span class="status-badge active">
+            <i class="fas fa-check-circle"></i>
+            {{ eng.status or 'Active' }}
+          </span>
+        </td>
+        <td>{{ eng.start_date.strftime('%d/%m/%Y') if eng.start_date else '—' }}</td>
+        <td>{{ eng.end_date.strftime('%d/%m/%Y') if eng.end_date else '—' }}</td>
+        <td>
+          <a href="{{ url_for('engagement_dashboard', eng_id=eng.id) }}" class="action-btn">
+            <i class="fas fa-arrow-right"></i>
+            Open
+          </a>
+        </td>
+      </tr>
+      {% else %}
+      <tr class="empty-row">
+        <td colspan="8">
+          <div class="empty-state">
+            <i class="fas fa-briefcase"></i>
+            <h3>No Engagements</h3>
+            <p>There are currently no engagements. Won opportunities will appear here.</p>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function viewOpportunity(oppId) {
+  window.location.href = '{{ url_for("opportunity_edit", opp_id=0) }}'.replace('0', oppId);
+}
+
+// ===== Dropdown Multi-Select Functions =====
+
+function toggleDropdown(dropdownId) {
+  const dropdown = document.getElementById(dropdownId);
+  const isOpen = dropdown.classList.contains('open');
+  
+  // Close all other dropdowns
+  document.querySelectorAll('.dropdown-multiselect.open').forEach(d => {
+    if (d.id !== dropdownId) d.classList.remove('open');
+  });
+  
+  // Toggle this dropdown
+  dropdown.classList.toggle('open');
+}
+
+function toggleOption(item, dropdownId) {
+  const checkbox = item.querySelector('input[type="checkbox"]');
+  checkbox.checked = !checkbox.checked;
+  item.classList.toggle('selected', checkbox.checked);
+  updateDropdownText(dropdownId);
+  event.stopPropagation();
+}
+
+function updateDropdownText(dropdownId) {
+  const dropdown = document.getElementById(dropdownId);
+  const checkboxes = dropdown.querySelectorAll('input[type="checkbox"]:checked');
+  const textSpan = dropdown.querySelector('.selected-text');
+  
+  const defaultTexts = {
+    'main-client-dropdown': 'All Clients',
+    'main-engagement-dropdown': 'All Engagements',
+    'main-ref-dropdown': 'All Refs',
+    'main-status-dropdown': 'All Statuses',
+    'opp-client-dropdown': 'All Clients',
+    'opp-name-dropdown': 'All Opportunities',
+    'opp-stage-dropdown': 'All Stages',
+    'eng-client-dropdown': 'All Clients',
+    'eng-name-dropdown': 'All Engagements',
+    'eng-role-dropdown': 'All Roles',
+    'eng-ref-dropdown': 'All Refs',
+    'eng-status-dropdown': 'All Statuses'
+  };
+  
+  if (checkboxes.length === 0) {
+    textSpan.innerHTML = defaultTexts[dropdownId] || 'Select...';
+  } else if (checkboxes.length === 1) {
+    textSpan.textContent = checkboxes[0].nextElementSibling.textContent;
+  } else {
+    textSpan.innerHTML = `${checkboxes.length} selected<span class="selected-count">${checkboxes.length}</span>`;
+  }
+}
+
+function getSelectedValues(dropdownId) {
+  const dropdown = document.getElementById(dropdownId);
+  const checkboxes = dropdown.querySelectorAll('input[type="checkbox"]:checked');
+  return Array.from(checkboxes).map(cb => cb.value);
+}
+
+function clearDropdown(dropdownId) {
+  const dropdown = document.getElementById(dropdownId);
+  dropdown.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.checked = false;
+    cb.closest('.dropdown-multiselect-item').classList.remove('selected');
+  });
+  updateDropdownText(dropdownId);
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.dropdown-multiselect')) {
+    document.querySelectorAll('.dropdown-multiselect.open').forEach(d => d.classList.remove('open'));
+  }
+});
+
+// ===== Main Filter Functions (filters all sections) =====
+
+function applyMainFilters() {
+  const clientFilter = getSelectedValues('main-client-dropdown');
+  const engagementFilter = getSelectedValues('main-engagement-dropdown');
+  const refFilter = getSelectedValues('main-ref-dropdown');
+  const statusFilter = getSelectedValues('main-status-dropdown');
+  const startFrom = document.getElementById('main-start-from').value;
+  const startTo = document.getElementById('main-start-to').value;
+  const endFrom = document.getElementById('main-end-from').value;
+  const endTo = document.getElementById('main-end-to').value;
+  
+  // Filter Pipeline Kanban cards (opportunities only have client filter applicable)
+  const pipelineCards = document.querySelectorAll('.project-card');
+  pipelineCards.forEach(card => {
+    const client = card.dataset.client || '';
+    
+    let show = true;
+    if (clientFilter.length > 0 && !clientFilter.includes(client)) show = false;
+    
+    card.style.display = show ? '' : 'none';
+  });
+  
+  // Update kanban column counts
+  document.querySelectorAll('.pipeline-stage').forEach(stage => {
+    const visibleCards = stage.querySelectorAll('.project-card:not([style*="display: none"])').length;
+    const countEl = stage.querySelector('.count');
+    if (countEl) countEl.textContent = visibleCards;
+  });
+  
+  // Filter Pipeline table rows (opportunities)
+  const pipelineRows = document.querySelectorAll('#pipeline-table tbody tr:not(.empty-row)');
+  let pipelineVisible = 0;
+  pipelineRows.forEach(row => {
+    const client = row.dataset.client || '';
+    
+    let show = true;
+    if (clientFilter.length > 0 && !clientFilter.includes(client)) show = false;
+    
+    row.style.display = show ? '' : 'none';
+    if (show) pipelineVisible++;
+  });
+  
+  // Filter Engagements table rows
+  const engRows = document.querySelectorAll('#engagements-table tbody tr:not(.empty-row)');
+  let engVisible = 0;
+  engRows.forEach(row => {
+    const name = row.dataset.name || '';
+    const client = row.dataset.client || '';
+    const ref = row.dataset.ref || '';
+    const status = row.dataset.status || '';
+    const startDate = row.dataset.start || '';
+    const endDate = row.dataset.end || '';
+    
+    let show = true;
+    if (clientFilter.length > 0 && !clientFilter.includes(client)) show = false;
+    if (engagementFilter.length > 0 && !engagementFilter.includes(name)) show = false;
+    if (refFilter.length > 0 && !refFilter.includes(ref)) show = false;
+    if (statusFilter.length > 0 && !statusFilter.includes(status)) show = false;
+    
+    // Date range filters for start date
+    if (startFrom && startDate && startDate < startFrom) show = false;
+    if (startTo && startDate && startDate > startTo) show = false;
+    
+    // Date range filters for end date
+    if (endFrom && endDate && endDate < endFrom) show = false;
+    if (endTo && endDate && endDate > endTo) show = false;
+    
+    row.style.display = show ? '' : 'none';
+    if (show) engVisible++;
+  });
+  
+  // Handle empty states
+  const pipelineEmpty = document.querySelector('#pipeline-table tbody tr.empty-row');
+  if (pipelineEmpty) pipelineEmpty.style.display = pipelineVisible === 0 ? '' : 'none';
+  
+  const engEmpty = document.querySelector('#engagements-table tbody tr.empty-row');
+  if (engEmpty) engEmpty.style.display = engVisible === 0 ? '' : 'none';
+}
+
+function clearMainFilters() {
+  clearDropdown('main-client-dropdown');
+  clearDropdown('main-engagement-dropdown');
+  clearDropdown('main-ref-dropdown');
+  clearDropdown('main-status-dropdown');
+  
+  // Clear date inputs
+  document.getElementById('main-start-from').value = '';
+  document.getElementById('main-start-to').value = '';
+  document.getElementById('main-end-from').value = '';
+  document.getElementById('main-end-to').value = '';
+  
+  // Show all pipeline cards
+  document.querySelectorAll('.project-card').forEach(card => {
+    card.style.display = '';
+  });
+  
+  // Reset kanban counts
+  document.querySelectorAll('.pipeline-stage').forEach(stage => {
+    const totalCards = stage.querySelectorAll('.project-card').length;
+    const countEl = stage.querySelector('.count');
+    if (countEl) countEl.textContent = totalCards;
+  });
+  
+  // Show all table rows
+  document.querySelectorAll('#pipeline-table tbody tr:not(.empty-row)').forEach(row => {
+    row.style.display = '';
+  });
+  document.querySelectorAll('#engagements-table tbody tr:not(.empty-row)').forEach(row => {
+    row.style.display = '';
+  });
+  
+  // Hide empty states if there are rows
+  const pipelineRows = document.querySelectorAll('#pipeline-table tbody tr:not(.empty-row)');
+  const pipelineEmpty = document.querySelector('#pipeline-table tbody tr.empty-row');
+  if (pipelineEmpty && pipelineRows.length > 0) pipelineEmpty.style.display = 'none';
+  
+  const engRows = document.querySelectorAll('#engagements-table tbody tr:not(.empty-row)');
+  const engEmpty = document.querySelector('#engagements-table tbody tr.empty-row');
+  if (engEmpty && engRows.length > 0) engEmpty.style.display = 'none';
+}
+
+// ===== Legacy filter functions (kept for backwards compatibility) =====
+
+function applyPipelineFilters() {
+  const clientFilter = getSelectedValues('opp-client-dropdown');
+  const nameFilter = getSelectedValues('opp-name-dropdown');
+  const stageFilter = getSelectedValues('opp-stage-dropdown');
+  const startFrom = document.querySelector('input[name="opp_start_from"]').value;
+  const startTo = document.querySelector('input[name="opp_start_to"]').value;
+  
+  const rows = document.querySelectorAll('#pipeline-table tbody tr:not(.empty-row)');
+  let visibleCount = 0;
+  
+  rows.forEach(row => {
+    const client = row.dataset.client;
+    const name = row.dataset.name;
+    const stage = row.dataset.stage;
+    const estStart = row.dataset.estStart;
+    
+    let show = true;
+    
+    if (clientFilter.length > 0 && !clientFilter.includes(client)) show = false;
+    if (nameFilter.length > 0 && !nameFilter.includes(name)) show = false;
+    if (stageFilter.length > 0 && !stageFilter.includes(stage)) show = false;
+    if (startFrom && estStart && estStart < startFrom) show = false;
+    if (startTo && estStart && estStart > startTo) show = false;
+    
+    row.style.display = show ? '' : 'none';
+    if (show) visibleCount++;
+  });
+  
+  // Show empty state if no results
+  const emptyRow = document.querySelector('#pipeline-table tbody tr.empty-row');
+  if (emptyRow) {
+    emptyRow.style.display = visibleCount === 0 ? '' : 'none';
+  }
+}
+
+function clearPipelineFilters() {
+  clearDropdown('opp-client-dropdown');
+  clearDropdown('opp-name-dropdown');
+  clearDropdown('opp-stage-dropdown');
+  document.querySelector('input[name="opp_start_from"]').value = '';
+  document.querySelector('input[name="opp_start_to"]').value = '';
+  
+  // Show all rows
+  const rows = document.querySelectorAll('#pipeline-table tbody tr:not(.empty-row)');
+  rows.forEach(row => { row.style.display = ''; });
+  
+  const emptyRow = document.querySelector('#pipeline-table tbody tr.empty-row');
+  if (emptyRow && rows.length > 0) {
+    emptyRow.style.display = 'none';
+  }
+}
+
+function applyEngagementsFilters() {
+  const clientFilter = getSelectedValues('eng-client-dropdown');
+  const nameFilter = getSelectedValues('eng-name-dropdown');
+  const roleFilter = getSelectedValues('eng-role-dropdown');
+  const refFilter = getSelectedValues('eng-ref-dropdown');
+  const statusFilter = getSelectedValues('eng-status-dropdown');
+  const startFrom = document.getElementById('eng-start-from').value;
+  const endTo = document.getElementById('eng-end-to').value;
+  
+  const rows = document.querySelectorAll('#engagements-table tbody tr:not(.empty-row)');
+  let visibleCount = 0;
+  
+  rows.forEach(row => {
+    const client = row.dataset.client;
+    const name = row.dataset.name;
+    const roles = row.dataset.roles ? row.dataset.roles.split(',') : [];
+    const ref = row.dataset.ref;
+    const status = row.dataset.status;
+    const start = row.dataset.start;
+    const end = row.dataset.end;
+    
+    let show = true;
+    
+    if (clientFilter.length > 0 && !clientFilter.includes(client)) show = false;
+    if (nameFilter.length > 0 && !nameFilter.includes(name)) show = false;
+    if (roleFilter.length > 0 && !roleFilter.some(r => roles.includes(r))) show = false;
+    if (refFilter.length > 0 && !refFilter.includes(ref)) show = false;
+    if (statusFilter.length > 0 && !statusFilter.includes(status)) show = false;
+    if (startFrom && start && start < startFrom) show = false;
+    if (endTo && end && end > endTo) show = false;
+    
+    row.style.display = show ? '' : 'none';
+    if (show) visibleCount++;
+  });
+  
+  // Show empty state if no results
+  const emptyRow = document.querySelector('#engagements-table tbody tr.empty-row');
+  if (emptyRow) {
+    emptyRow.style.display = visibleCount === 0 ? '' : 'none';
+  }
+}
+
+function clearEngagementsFilters() {
+  clearDropdown('eng-client-dropdown');
+  clearDropdown('eng-name-dropdown');
+  clearDropdown('eng-role-dropdown');
+  clearDropdown('eng-ref-dropdown');
+  clearDropdown('eng-status-dropdown');
+  document.getElementById('eng-start-from').value = '';
+  document.getElementById('eng-end-to').value = '';
+  
+  // Show all rows
+  const rows = document.querySelectorAll('#engagements-table tbody tr:not(.empty-row)');
+  rows.forEach(row => { row.style.display = ''; });
+  
+  const emptyRow = document.querySelectorAll('#engagements-table tbody tr.empty-row');
+  if (emptyRow && rows.length > 0) {
+    emptyRow.style.display = 'none';
+  }
+}
+
+// ===== Pipeline Drag and Drop Functions =====
+
+let draggedPipelineCard = null;
+let originalPipelineStage = null;
+
+function handlePipelineDragStart(event) {
+  draggedPipelineCard = event.target;
+  originalPipelineStage = event.target.dataset.stage;
+  event.target.classList.add('dragging');
+  event.dataTransfer.effectAllowed = 'move';
+  event.dataTransfer.setData('text/plain', JSON.stringify({
+    id: event.target.dataset.id,
+    stage: event.target.dataset.stage
+  }));
+  // Prevent the click event from firing
+  event.stopPropagation();
+}
+
+function handlePipelineDragEnd(event) {
+  event.target.classList.remove('dragging');
+  document.querySelectorAll('.pipeline-stage-body.drag-over').forEach(el => el.classList.remove('drag-over'));
+}
+
+function handlePipelineDragOver(event) {
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'move';
+  event.currentTarget.classList.add('drag-over');
+}
+
+function handlePipelineDragLeave(event) {
+  event.currentTarget.classList.remove('drag-over');
+}
+
+function handlePipelineDrop(event) {
+  event.preventDefault();
+  event.currentTarget.classList.remove('drag-over');
+  
+  const targetStageBody = event.currentTarget;
+  const targetStage = targetStageBody.dataset.stage;
+  
+  if (!draggedPipelineCard || targetStage === originalPipelineStage) {
+    return;
+  }
+  
+  const cardData = JSON.parse(event.dataTransfer.getData('text/plain'));
+  
+  // Hide any empty placeholder in target
+  const emptyPlaceholder = targetStageBody.querySelector('.empty-placeholder');
+  if (emptyPlaceholder) {
+    emptyPlaceholder.style.display = 'none';
+  }
+  
+  // Move the card visually first for better UX
+  targetStageBody.appendChild(draggedPipelineCard);
+  draggedPipelineCard.dataset.stage = targetStage;
+  
+  // Update column counts
+  updatePipelineCounts();
+  
+  // Update the server
+  fetch('/api/opportunity/move-stage', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'same-origin',
+    body: JSON.stringify({
+      opportunity_id: cardData.id,
+      from_stage: originalPipelineStage,
+      to_stage: targetStage
+    })
+  })
+  .then(async response => {
+    const contentType = response.headers.get('content-type');
+    
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error('Session expired. Please refresh the page and log in again.');
+    }
+    
+    const data = await response.json();
+    
+    if (!response.ok || data.error) {
+      throw new Error(data.error || 'Server error');
+    }
+    
+    return data;
+  })
+  .then(data => {
+    showPipelineToast('Opportunity moved to ' + targetStage, 'success');
+    
+    // Auto-update the Pipeline/Opportunities table row
+    updatePipelineTableRow(cardData.id, targetStage);
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    // Revert the visual move
+    const originalStageBody = document.querySelector(`.pipeline-stage-body[data-stage="${originalPipelineStage}"]`);
+    if (originalStageBody && draggedPipelineCard) {
+      originalStageBody.appendChild(draggedPipelineCard);
+      draggedPipelineCard.dataset.stage = originalPipelineStage;
+      updatePipelineCounts();
+    }
+    showPipelineToast(error.message || 'Failed to move opportunity', 'danger');
+  });
+}
+
+function updatePipelineCounts() {
+  document.querySelectorAll('.pipeline-stage').forEach(stage => {
+    const stageBody = stage.querySelector('.pipeline-stage-body');
+    const stageName = stageBody.dataset.stage;
+    const cards = stageBody.querySelectorAll('.project-card');
+    const count = cards.length;
+    
+    // Update header count
+    const countBadge = stage.querySelector('.count');
+    if (countBadge) {
+      countBadge.textContent = count;
+    }
+    
+    // Show/hide empty placeholder
+    const emptyPlaceholder = stageBody.querySelector('.empty-placeholder');
+    if (emptyPlaceholder) {
+      emptyPlaceholder.style.display = count === 0 ? '' : 'none';
+    }
+  });
+}
+
+// Auto-update Pipeline/Opportunities table when Kanban card is moved
+function updatePipelineTableRow(opportunityId, newStage) {
+  // Find the table row for this opportunity using data-opp-id attribute
+  const row = document.querySelector(`#pipeline-table tbody tr[data-opp-id="${opportunityId}"]`);
+  
+  if (row) {
+    // Update the data attribute
+    row.dataset.stage = newStage;
+    
+    // Update the status badge in the table (Stage is the 3rd column)
+    const statusCell = row.querySelector('td:nth-child(3)');
+    if (statusCell) {
+      const stageLower = newStage.toLowerCase().replace(/ /g, '-');
+      statusCell.innerHTML = `<span class="status-badge ${stageLower}">${newStage}</span>`;
+    }
+    
+    // Add a brief highlight effect to show the update
+    row.style.transition = 'background-color 0.3s ease';
+    row.style.backgroundColor = '#fef3c7';
+    setTimeout(() => {
+      row.style.backgroundColor = '';
+    }, 1500);
+  }
+}
+
+function showPipelineToast(message, type) {
+  // Create toast container if not exists
+  let toastContainer = document.getElementById('pipeline-toast-container');
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.id = 'pipeline-toast-container';
+    toastContainer.style.cssText = 'position: fixed; bottom: 20px; right: 20px; z-index: 9999;';
+    document.body.appendChild(toastContainer);
+  }
+  
+  const toast = document.createElement('div');
+  toast.className = `alert alert-${type} d-flex align-items-center`;
+  toast.style.cssText = 'padding: 0.75rem 1rem; margin-bottom: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 8px; animation: slideIn 0.3s ease;';
+  toast.innerHTML = `
+    <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} me-2"></i>
+    ${message}
+  `;
+  
+  toastContainer.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.style.animation = 'slideOut 0.3s ease';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// Add CSS animation for toasts
+const toastStyle = document.createElement('style');
+toastStyle.textContent = `
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(100px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes slideOut {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(100px); }
+  }
+`;
+document.head.appendChild(toastStyle);
+</script>
+{% endblock %}
