@@ -123,6 +123,7 @@ SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_USER = os.getenv("SMTP_USER", "")
 SMTP_PASS = os.getenv("SMTP_PASS", "")
 SMTP_FROM = os.getenv("SMTP_FROM", "Talent <noreply@example.com>")
+BREVO_API_KEY = os.getenv("BREVO_API_KEY", "")
 
 _client = None
 def get_gemini_model():
@@ -5102,20 +5103,66 @@ def send_email(
     attachments: Optional[List[Tuple[str, bytes, str]]] = None,
 ) -> bool:
     """
-    Send an email via SMTP. Returns True if sent successfully, raises exception on failure.
+    Send an email. Tries Brevo HTTP API first (works on cloud platforms where
+    SMTP ports are blocked), falls back to SMTP if Brevo key not configured.
+    Returns True on success, raises exception on failure.
     """
-    # Dev / offline mode: if SMTP_HOST is not configured (or just whitespace),
-    # don't try to actually send. Just log what would've gone out.
+    # --- Brevo HTTP API (preferred) ---
+    if (BREVO_API_KEY or "").strip():
+        return _send_via_brevo(to_email, subject, html_body, attachments)
+
+    # --- SMTP fallback ---
     if not (SMTP_HOST or "").strip():
-        print("[DEV] SMTP not configured; would email:")
-        print(" To:", to_email)
-        print(" Subj:", subject)
-        print(" Body:", html_body[:200], "...")
+        print("[DEV] Neither Brevo API nor SMTP configured; would email:")
+        print("  To:", to_email)
+        print("  Subj:", subject)
+        print("  Body:", html_body[:200], "...")
         if attachments:
             for filename, _, mime in attachments:
-                print(f" Attachment: {filename} ({mime})")
-        raise RuntimeError("SMTP not configured - cannot send email")
+                print(f"  Attachment: {filename} ({mime})")
+        raise RuntimeError("Email not configured - set BREVO_API_KEY or SMTP_HOST")
 
+    return _send_via_smtp(to_email, subject, html_body, attachments)
+
+
+def _send_via_brevo(to_email, subject, html_body, attachments=None):
+    """Send email via Brevo transactional email API (HTTPS, port 443)."""
+    print(f"[BREVO] Sending to {to_email}: {subject}")
+    payload = {
+        "sender": {"email": SMTP_FROM},
+        "to": [{"email": to_email}],
+        "subject": subject,
+        "htmlContent": html_body,
+    }
+    if attachments:
+        payload["attachment"] = []
+        for filename, content, mime in attachments:
+            payload["attachment"].append({
+                "name": filename,
+                "content": base64.b64encode(content).decode("utf-8"),
+            })
+
+    resp = requests.post(
+        "https://api.brevo.com/v3/smtp/email",
+        headers={
+            "api-key": BREVO_API_KEY.strip(),
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        },
+        json=payload,
+        timeout=30,
+    )
+    if resp.status_code in (200, 201):
+        msg_id = resp.json().get("messageId", "unknown")
+        print(f"[BREVO] Successfully sent to {to_email} (messageId: {msg_id})")
+        return True
+    else:
+        print(f"[BREVO] Failed: {resp.status_code} {resp.text}")
+        raise RuntimeError(f"Brevo API error {resp.status_code}: {resp.text}")
+
+
+def _send_via_smtp(to_email, subject, html_body, attachments=None):
+    """Send email via SMTP (legacy fallback)."""
     msg = EmailMessage()
     msg["From"] = SMTP_FROM
     msg["To"] = to_email
@@ -5137,17 +5184,11 @@ def send_email(
     print(f"[SMTP] Connecting to {SMTP_HOST}:{SMTP_PORT} for {to_email}...")
     try:
         with smtplib.SMTP(SMTP_HOST.strip(), SMTP_PORT, timeout=30) as server:
-            server.set_debuglevel(0)  # Set to 1 for full SMTP conversation logging
-            
-            # EHLO response
+            server.set_debuglevel(0)
             ehlo_code, ehlo_msg = server.ehlo()
             print(f"[SMTP] EHLO response: {ehlo_code} {ehlo_msg.decode()[:100]}")
-            
-            # STARTTLS
             tls_code, tls_msg = server.starttls(context=context)
             print(f"[SMTP] STARTTLS response: {tls_code} {tls_msg.decode()[:100]}")
-            
-            # Login
             if SMTP_USER and SMTP_PASS:
                 try:
                     login_code, login_msg = server.login(SMTP_USER, SMTP_PASS)
@@ -5155,8 +5196,6 @@ def send_email(
                 except smtplib.SMTPAuthenticationError as auth_err:
                     print(f"[SMTP] AUTH FAILED: {auth_err.smtp_code} {auth_err.smtp_error}")
                     raise
-            
-            # Send message
             server.send_message(msg)
             print(f"[EMAIL] Successfully sent to {to_email}: {subject}")
     except smtplib.SMTPAuthenticationError as e:
