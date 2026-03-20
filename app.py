@@ -4414,19 +4414,44 @@ def _rebuild_ai_summary_and_tags(s, cand, doc=None, job=None, appn=None):
     # Safely extract text (prefer project helper)
     def _safe_extract_text(file_path: str, original_name: str) -> str:
         name = (original_name or file_path).lower()
-        print(f"[CV] Extracting text from: {file_path} (name={name})")
-        # PDF
+        print(f"[CV] Extracting text from: {file_path} (name={name}, exists={os.path.exists(file_path)})")
+
+        if not os.path.exists(file_path):
+            print(f"[CV] File not found: {file_path}")
+            return ""
+
+        # PDF — try multiple methods
         if name.endswith(".pdf"):
+            # Method 1: pdfplumber
             try:
                 import pdfplumber
                 with pdfplumber.open(file_path) as pdf:
                     bits = [(p.extract_text() or "") for p in pdf.pages]
                 txt = "\n".join(bits).strip()
-                print(f"[CV] PDF extracted {len(txt)} chars")
+                print(f"[CV] pdfplumber extracted {len(txt)} chars")
                 if txt:
                     return txt
             except Exception as e:
-                print(f"[CV] PDF extraction failed: {e}")
+                print(f"[CV] pdfplumber failed: {e}")
+
+            # Method 2: PyPDF2 fallback
+            try:
+                from PyPDF2 import PdfReader
+                reader = PdfReader(file_path)
+                bits = [page.extract_text() or "" for page in reader.pages]
+                txt = "\n".join(bits).strip()
+                print(f"[CV] PyPDF2 extracted {len(txt)} chars")
+                if txt:
+                    return txt
+            except ImportError:
+                print("[CV] PyPDF2 not installed — skipping fallback")
+            except Exception as e:
+                print(f"[CV] PyPDF2 failed: {e}")
+
+            # PDF failed — do NOT fall through to plain text
+            print("[CV] All PDF extraction methods failed")
+            return ""
+
         # DOCX
         if name.endswith(".docx"):
             try:
@@ -4438,16 +4463,22 @@ def _rebuild_ai_summary_and_tags(s, cand, doc=None, job=None, appn=None):
                     return txt
             except Exception as e:
                 print(f"[CV] DOCX extraction failed: {e}")
+            return ""
+
         # DOC (legacy .doc format)
-        if name.endswith(".doc") and not name.endswith(".docx"):
-            print(f"[CV] Legacy .doc format — extraction not supported")
+        if name.endswith(".doc"):
+            print("[CV] Legacy .doc format — extraction not supported")
             return ""
-        # Plain text
-        try:
-            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
-                return f.read().strip()
-        except Exception:
-            return ""
+
+        # Plain text only for .txt files
+        if name.endswith(".txt"):
+            try:
+                with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                    return f.read().strip()
+            except Exception:
+                pass
+
+        return ""
 
     cv_text = ""
     if doc:
@@ -4831,11 +4862,24 @@ Output these sections using bullet points (no waffle, recruiter shorthand is fin
 Focus on financial services relevance: KYC, AML, CDD, SAR reporting, FCA/PRA regulation, risk, compliance, audit, remediation.
 Be specific — name tools, systems, and regulatory frameworks. No generic filler.
 
+CRITICAL RULES:
+- ONLY use information that is explicitly stated in the CV text below.
+- NEVER fabricate, invent, or assume any details not present in the CV.
+- If the CV text is garbled, empty, or unreadable, respond with EXACTLY: "Unable to retrieve information from CV."
+- If information for a section is not in the CV, state "Not found in CV" for that section.
+
 CANDIDATE CV:
 {text}
 """
-            resp = model.generate_content(prompt)
+            import google.generativeai as genai
+            gen_config = genai.GenerationConfig(
+                max_output_tokens=1200,
+                temperature=0.3,
+            )
+            resp = model.generate_content(prompt, generation_config=gen_config)
             out = (resp.text or "").strip()
+            if "unable to retrieve" in out.lower() or "cannot parse" in out.lower() or "cannot extract" in out.lower():
+                return "Unable to retrieve information from CV."
             if out:
                 return _smart_truncate(out, max_chars)
         except Exception as e:
