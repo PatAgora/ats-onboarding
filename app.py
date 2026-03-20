@@ -4782,7 +4782,7 @@ def _smart_truncate(txt: str, limit: int) -> str:
             return cut[:i + 1].rstrip() + " …"
     return cut.rstrip() + " …"
 
-def ai_summarise(text: str, max_chars: int = 1400, job_description: str = "") -> str:
+def ai_summarise(text: str, max_chars: int = 4000, job_description: str = "") -> str:
     text = _truncate_for_ai(text or "", 12000)
     if not text:
         return ""
