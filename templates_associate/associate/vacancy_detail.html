@@ -107,6 +107,12 @@
                     <p class="mb-0 text-sm">You have already applied for this position. We will be in touch if your profile is a match.</p>
                 </div>
             </div>
+            <form method="POST" action="/portal/vacancies/{{ job.id or job.public_token }}/withdraw" style="margin-top: 8px;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn-secondary" style="font-size: 0.8rem;">
+                    <i class="fas fa-times"></i> Withdraw Application
+                </button>
+            </form>
             {% else %}
             <form method="POST" action="/portal/vacancies/{{ job.id or job.public_token }}/apply" enctype="multipart/form-data">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

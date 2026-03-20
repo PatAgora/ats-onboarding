@@ -2981,6 +2981,34 @@ def vacancy_apply(job_id):
 
 
 # =========================================================================
+# P2b: VACANCY WITHDRAW ROUTE
+# =========================================================================
+
+@associate_bp.route("/vacancies/<int:job_id>/withdraw", methods=["POST"])
+@_require_login
+def vacancy_withdraw(job_id):
+    """Withdraw an application from the portal."""
+    Application = _model("Application")
+    engine = _engine()
+    cand_id = _get_associate_id()
+
+    with SASession(engine) as s:
+        if Application:
+            app = s.query(Application).filter_by(
+                candidate_id=cand_id, job_id=job_id
+            ).first()
+            if app:
+                s.delete(app)
+                _add_note(s, cand_id, f"Withdrew application for job #{job_id} via Associate Portal.")
+                s.commit()
+                flash("Application withdrawn. You may re-apply.", "success")
+            else:
+                flash("No application found to withdraw.", "warning")
+
+    return redirect(url_for("associate.vacancy_detail", job_id=job_id))
+
+
+# =========================================================================
 # P3: FORGOT PASSWORD ROUTE
 # =========================================================================
 
