@@ -1178,10 +1178,10 @@
         <span class="value success" id="completeCount">{{ vetting_summary.complete }}</span>
       </div>
 
-      <!-- Clickable Candidate List (SLA Detail) -->
+      <!-- Clickable Associate List (SLA Detail) -->
       <hr class="my-2">
       <div style="font-size: 0.75rem; color: #6b7280; font-weight: 500; margin-bottom: 0.5rem; cursor: pointer;" onclick="document.getElementById('vettingCandidateList').style.display = document.getElementById('vettingCandidateList').style.display === 'none' ? 'block' : 'none'">
-        <i class="fas fa-users me-1"></i>Candidates In Vetting <i class="fas fa-chevron-down" style="font-size: 0.6rem;"></i>
+        <i class="fas fa-users me-1"></i>Associates In Vetting <i class="fas fa-chevron-down" style="font-size: 0.6rem;"></i>
       </div>
       <div id="vettingCandidateList" style="max-height: 200px; overflow-y: auto; margin-bottom: 0.5rem;">
         {% for vc in vetting_summary.candidates if vc.status == 'in_progress' %}
@@ -1201,7 +1201,7 @@
         </a>
         {% endfor %}
         {% if not vetting_summary.candidates|selectattr('status', 'equalto', 'in_progress')|list %}
-        <div style="font-size: 0.75rem; color: #9ca3af; text-align: center; padding: 0.5rem;">No candidates in vetting</div>
+        <div style="font-size: 0.75rem; color: #9ca3af; text-align: center; padding: 0.5rem;">No associates in vetting</div>
         {% endif %}
       </div>
 
@@ -1224,7 +1224,7 @@
     <h4><i class="fas fa-ban text-danger me-2"></i>Bulk Reject Applications</h4>
     <p style="font-size: 0.85rem; color: #6b7280;">
       You are about to reject <strong id="bulkRejectCount">0</strong> application(s).
-      A rejection email will be sent to each candidate.
+      A rejection email will be sent to each associate.
     </p>
     <div style="margin-bottom: 1rem;">
       <label style="font-size: 0.8rem; font-weight: 500; color: #374151; display: block; margin-bottom: 0.25rem;">
@@ -1806,11 +1806,11 @@ function toggleSLAFilter(filter) {
   updateCheckTypeChart(filter);
 
   if (filter === 'in') {
-    showToast('<i class="fas fa-check-circle me-1"></i> Showing ' + visibleCount + ' candidates In SLA', 'success');
+    showToast('<i class="fas fa-check-circle me-1"></i> Showing ' + visibleCount + ' associates In SLA', 'success');
   } else if (filter === 'out') {
-    showToast('<i class="fas fa-exclamation-circle me-1"></i> Showing ' + visibleCount + ' candidates Out of SLA', 'warning');
+    showToast('<i class="fas fa-exclamation-circle me-1"></i> Showing ' + visibleCount + ' associates Out of SLA', 'warning');
   } else {
-    showToast('<i class="fas fa-list me-1"></i> Showing all candidates', 'info');
+    showToast('<i class="fas fa-list me-1"></i> Showing all associates', 'info');
   }
 }
 

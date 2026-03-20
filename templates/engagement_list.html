@@ -18,7 +18,7 @@
         <table class="table align-middle mb-0">
           <thead>
             <tr>
-              <th>Candidate</th>
+              <th>Associate</th>
               <th>Email</th>
               <th>Job</th>
               {% if section=='interview_scheduled' %}<th>When</th>{% endif %}
@@ -67,7 +67,7 @@
     <div class="card shadow-sm border-0">
       <div class="table-responsive">
         <table class="table align-middle mb-0">
-          <thead><tr><th>Candidate</th><th>Email</th><th>Job</th><th>Added</th><th></th></tr></thead>
+          <thead><tr><th>Associate</th><th>Email</th><th>Job</th><th>Added</th><th></th></tr></thead>
           <tbody>
             {% for r in items %}
             <tr>
@@ -108,7 +108,7 @@
     <div class="card shadow-sm border-0">
       <div class="table-responsive">
         <table class="table align-middle mb-0">
-          <thead><tr><th>Candidate</th><th>Email</th><th>Job</th><th>Verifile Ref</th><th>Checks</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th>Associate</th><th>Email</th><th>Job</th><th>Verifile Ref</th><th>Checks</th><th>Status</th><th></th></tr></thead>
           <tbody>
             {% for v in items %}
             <tr>
@@ -154,7 +154,7 @@
     <div class="card shadow-sm border-0">
       <div class="table-responsive">
         <table class="table align-middle mb-0">
-          <thead><tr><th>Candidate</th><th>Email</th><th>Job</th><th>Provider</th><th>Request ID</th><th>{{ 'Signed' if section=='contract_signed' else 'Sent' }}</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th>Associate</th><th>Email</th><th>Job</th><th>Provider</th><th>Request ID</th><th>{{ 'Signed' if section=='contract_signed' else 'Sent' }}</th><th>Status</th><th></th></tr></thead>
           <tbody>
             {% for e in items %}
             <tr>

@@ -2155,7 +2155,7 @@ def admin_portal_user_detail(cand_id: int):
     with Session(engine) as s:
         cand = s.get(Candidate, cand_id)
         if not cand:
-            flash("Candidate not found", "danger")
+            flash("Associate not found", "danger")
             return redirect(url_for("admin_portal_users"))
         
         # Get applications for this candidate (eagerly load job relationship)
@@ -2201,7 +2201,7 @@ def admin_portal_user_verify(cand_id: int):
     with Session(engine) as s:
         cand = s.get(Candidate, cand_id)
         if not cand:
-            flash("Candidate not found", "danger")
+            flash("Associate not found", "danger")
             return redirect(url_for("admin_portal_users"))
         
         cand.email_verified = True
@@ -2221,11 +2221,11 @@ def admin_portal_user_send_magic_link(cand_id: int):
     with Session(engine) as s:
         cand = s.get(Candidate, cand_id)
         if not cand:
-            flash("Candidate not found", "danger")
+            flash("Associate not found", "danger")
             return redirect(url_for("admin_portal_users"))
         
         if not cand.email:
-            flash("Candidate has no email address", "danger")
+            flash("Associate has no email address", "danger")
             return redirect(url_for("admin_portal_user_detail", cand_id=cand_id))
         
         # Generate magic link
@@ -2281,7 +2281,7 @@ def admin_portal_user_update(cand_id: int):
     with Session(engine) as s:
         cand = s.get(Candidate, cand_id)
         if not cand:
-            flash("Candidate not found", "danger")
+            flash("Associate not found", "danger")
             return redirect(url_for("admin_portal_users"))
         
         # Update fields
@@ -2306,7 +2306,7 @@ def admin_portal_user_delete(cand_id: int):
     with Session(engine) as s:
         cand = s.get(Candidate, cand_id)
         if not cand:
-            flash("Candidate not found", "danger")
+            flash("Associate not found", "danger")
             return redirect(url_for("admin_portal_users"))
         
         name = cand.name
@@ -5783,7 +5783,7 @@ def candidate_regenerate_summary():
         job_id = None
 
     if not cand_id:
-        flash("Missing candidate id.", "warning")
+        flash("Missing associate id.", "warning")
         return redirect(request.referrer or url_for("resource_pool"))
 
     # --- Imports kept inside to avoid circulars
@@ -5868,7 +5868,7 @@ def candidate_regenerate_summary():
     with SASession(engine) as s:
         cand = s.get(Candidate, cand_id)
         if not cand:
-            flash("Candidate not found.", "warning")
+            flash("Associate not found.", "warning")
             return redirect(url_for("resource_pool"))
 
         # Latest CV doc (prefer uploaded_at if present)
@@ -5881,7 +5881,7 @@ def candidate_regenerate_summary():
             .limit(1)
         ).scalar_one_or_none()
         if not doc:
-            flash("No CV found for this candidate.", "warning")
+            flash("No CV found for this associate.", "warning")
             return redirect(url_for("candidate_profile", cand_id=cand_id))
 
         # Extract text from CV
@@ -6074,7 +6074,7 @@ def action_score_candidate(cand_id: int):
         cand = s.get(Candidate, cand_id)
         job = s.get(Job, job_id)
         if not cand or not job:
-            flash("Candidate or job not found.", "warning")
+            flash("Associate or job not found.", "warning")
             return redirect(url_for("candidate_profile", cand_id=cand_id))
 
         # Latest app for this candidate (prefer same job if available)
@@ -6095,7 +6095,7 @@ def action_score_candidate(cand_id: int):
             .limit(1)
         ).scalar_one_or_none()
         if not doc:
-            flash("No CV found for this candidate.", "warning")
+            flash("No CV found for this associate.", "warning")
             return redirect(url_for("candidate_profile", cand_id=cand_id, job_id=job_id))
 
         # Extract CV text
@@ -7413,7 +7413,7 @@ def api_workflow_bulk_reject():
                             jt = jb.title if jb else "the role"
                             try:
                                 send_email(cd.email, "Application Update - " + jt,
-                                    "<p>Dear " + (cd.name or "Candidate") + ",</p>"
+                                    "<p>Dear " + (cd.name or "Associate") + ",</p>"
                                     + "<p>" + rej_reason + "</p>"
                                     + "<p>Role: <strong>" + jt + "</strong></p>"
                                     + "<p>We wish you all the best.</p>"
@@ -8868,7 +8868,7 @@ def candidate_delete_action():
     cand_id = int((request.form.get("candidate_id") or "0") or 0)
     confirm = (request.form.get("confirm") or "").lower() == "yes"
     if not cand_id:
-        flash("Missing candidate id.", "warning")
+        flash("Missing associate id.", "warning")
         return redirect(request.referrer or url_for("resource_pool"))
     if not confirm:
         flash("Deletion cancelled.", "info")
@@ -8877,7 +8877,7 @@ def candidate_delete_action():
     with Session(engine) as s:
         cand = s.get(Candidate, cand_id)
         if not cand:
-            flash("Candidate not found.", "warning")
+            flash("Associate not found.", "warning")
             return redirect(request.referrer or url_for("resource_pool"))
 
         app_ids = [aid for (aid,) in s.execute(
@@ -8906,7 +8906,7 @@ def candidate_delete_action():
         s.delete(cand)
         s.commit()
 
-    flash("Candidate deleted.", "success")
+    flash("Associate deleted.", "success")
     return redirect(request.referrer or url_for("resource_pool"))
 
 @login_required
@@ -8916,7 +8916,7 @@ def candidate_delete_cv(cand_id, doc_id):
     with Session(engine) as s:
         cand = s.get(Candidate, cand_id)
         if not cand:
-            flash("Candidate not found.", "warning")
+            flash("Associate not found.", "warning")
             return redirect(request.referrer or url_for("resource_pool"))
         
         doc = s.get(Document, doc_id)
@@ -8951,7 +8951,7 @@ def add_candidate_manual():
         # Check if email already exists
         existing = s.scalar(select(Candidate).where(func.lower(Candidate.email) == email))
         if existing:
-            flash(f"A candidate with email {email} already exists.", "warning")
+            flash(f"An associate with email {email} already exists.", "warning")
             return redirect(url_for("candidate_profile", cand_id=existing.id))
         
         # Create new candidate
@@ -9018,7 +9018,7 @@ def update_candidate_status(cand_id):
     with Session(engine) as s:
         cand = s.get(Candidate, cand_id)
         if not cand:
-            flash("Candidate not found.", "danger")
+            flash("Associate not found.", "danger")
             return redirect(request.referrer or url_for("resource_pool"))
         
         updates = []
@@ -9057,7 +9057,7 @@ def candidate_profile_update(cand_id):
     with Session(engine) as s:
         cand = s.get(Candidate, cand_id)
         if not cand:
-            flash("Candidate not found.", "danger")
+            flash("Associate not found.", "danger")
             return redirect(request.referrer or url_for("resource_pool"))
         
         # Update core contact fields (name, email, phone)
@@ -9148,7 +9148,7 @@ def candidate_add_activity(cand_id):
     with Session(engine) as s:
         cand = s.get(Candidate, cand_id)
         if not cand:
-            flash("Candidate not found.", "danger")
+            flash("Associate not found.", "danger")
             return redirect(request.referrer or url_for("resource_pool"))
         
         activity_type = request.form.get("activity_type", "note").strip()
@@ -9997,7 +9997,7 @@ def action_vetting(cand_id):
     with Session(engine) as s:
         cand = s.get(Candidate, cand_id)
         if not cand:
-            flash("Candidate not found.", "danger")
+            flash("Associate not found.", "danger")
             return redirect(request.referrer or url_for("resource_pool"))
         # Find any active application for this candidate and update status
         appn = s.scalar(
@@ -10008,7 +10008,7 @@ def action_vetting(cand_id):
         if appn:
             appn.status = "Accepted"  # Offer accepted, vetting starts
             s.commit()
-    flash("Vetting process started - candidate moved to Accepted stage.", "success")
+    flash("Vetting process started - associate moved to Accepted stage.", "success")
     return redirect(request.referrer or url_for("candidate_profile", cand_id=cand_id))
 
 @csrf.exempt
@@ -10025,7 +10025,7 @@ def api_vetting_trigger(cand_id):
     with Session(engine) as s:
         cand = s.get(Candidate, cand_id)
         if not cand:
-            return jsonify({"ok": False, "error": "Candidate not found"}), 404
+            return jsonify({"ok": False, "error": "Associate not found"}), 404
 
         # Find the candidate's active application to get engagement context
         appn = s.scalar(
@@ -11112,7 +11112,7 @@ def start_vetting(cand_id: int):
     with Session(engine) as s:
         cand = s.get(Candidate, cand_id)
         if not cand:
-            flash("Candidate not found.", "danger")
+            flash("Associate not found.", "danger")
             return redirect(url_for("workflow"))
 
         # Create vetting checks if they don't exist
@@ -11150,7 +11150,7 @@ def start_vetting(cand_id: int):
             except Exception as e:
                 flash(f"Vetting started but email failed: {str(e)}", "warning")
         else:
-            flash(f"Vetting started ({created} checks created). No email — candidate has no email address.", "warning")
+            flash(f"Vetting started ({created} checks created). No email — associate has no email address.", "warning")
 
         log_audit_event('create', 'vetting',
                         f'Vetting started for {cand.name} ({created} checks created)',
@@ -11412,7 +11412,7 @@ def send_reference(cand_id: int):
     with Session(engine) as s:
         cand = s.get(Candidate, cand_id)
         if not cand:
-            flash("Candidate not found.", "danger")
+            flash("Associate not found.", "danger")
             return redirect(url_for("workflow"))
 
         # Get or create ReferenceRequest
@@ -11590,7 +11590,7 @@ def update_vetting_data(cand_id: int):
     with Session(engine) as s:
         cand = s.get(Candidate, cand_id)
         if not cand:
-            flash("Candidate not found.", "danger")
+            flash("Associate not found.", "danger")
             return redirect(url_for("resource_pool"))
 
         # Update fields if provided
@@ -11761,7 +11761,7 @@ def issue_candidate_contract(cand_id: int):
         
         s.commit()
     
-    flash("Contract issued successfully — candidate moved to 'Contract Issued' stage", "success")
+    flash("Contract issued successfully — associate moved to 'Contract Issued' stage", "success")
     return redirect(url_for("candidate_profile", cand_id=cand_id))
 
 # -------- GAP 1.5: Contract Resend/Chase Actions --------
@@ -11927,7 +11927,7 @@ def confirm_candidate_leaving(cand_id: int):
     with Session(engine) as s:
         cand = s.get(Candidate, cand_id)
         if not cand:
-            return jsonify({"ok": False, "error": "Candidate not found"}), 404
+            return jsonify({"ok": False, "error": "Associate not found"}), 404
         
         # Mark candidate as confirmed leaving
         # When the scheduled job runs, it will update their status to "Available"
@@ -12014,7 +12014,7 @@ def api_engagement_shortlist(eng_id: int):
     job_id = payload.get("job_id")  # Optional - if not provided, will use first job in engagement
     
     if not candidate_id:
-        return jsonify({"ok": False, "error": "Candidate ID is required"}), 400
+        return jsonify({"ok": False, "error": "Associate ID is required"}), 400
     
     with Session(engine) as s:
         # Verify engagement exists
@@ -12025,7 +12025,7 @@ def api_engagement_shortlist(eng_id: int):
         # Verify candidate exists
         candidate = s.get(Candidate, candidate_id)
         if not candidate:
-            return jsonify({"ok": False, "error": "Candidate not found"}), 404
+            return jsonify({"ok": False, "error": "Associate not found"}), 404
         
         # Get job - use provided job_id or first job in engagement
         if job_id:
@@ -12055,7 +12055,7 @@ def api_engagement_shortlist(eng_id: int):
             
             log_audit_event(
                 'update', 'workflow',
-                f'Candidate {candidate.name} moved to Shortlist for {engagement.name}',
+                f'Associate {candidate.name} moved to Shortlist for {engagement.name}',
                 'application', existing_app.id,
                 {'old_status': old_status, 'new_status': 'Shortlist', 'engagement_id': eng_id}
             )
@@ -12083,7 +12083,7 @@ def api_engagement_shortlist(eng_id: int):
 
             log_audit_event(
                 'create', 'workflow',
-                f'Candidate {candidate.name} shortlisted for {engagement.name}',
+                f'Associate {candidate.name} shortlisted for {engagement.name}',
                 'application', new_app.id,
                 {'status': 'Shortlist', 'engagement_id': eng_id, 'job_id': job.id,
                  'vetting_checks_created': vc_created}
@@ -12613,7 +12613,7 @@ def shortlist_add():
     cand_id = int(request.form.get("candidate_id", "0") or 0)
 
     if not job_id or not cand_id:
-        flash("Pick a job and candidate to shortlist.", "warning")
+        flash("Pick a job and associate to shortlist.", "warning")
         return redirect(url_for("resource_pool"))
 
     with Session(engine) as s:
@@ -12621,7 +12621,7 @@ def shortlist_add():
         job = s.scalar(select(Job).where(Job.id == job_id))
         cand = s.scalar(select(Candidate).where(Candidate.id == cand_id))
         if not job or not cand:
-            flash("Job or Candidate not found.", "danger")
+            flash("Job or Associate not found.", "danger")
             return redirect(url_for("resource_pool", job_id=job_id))
 
         # Prevent duplicate shortlist entries
@@ -14484,7 +14484,7 @@ def resource_pool_csv():
         sio = StringIO()
         writer = csv.writer(sio)
 
-        headers = ["Candidate ID", "Name", "Skills", "Last CV Upload"]
+        headers = ["Associate ID", "Name", "Skills", "Last CV Upload"]
         if job:
             headers += ["Match Score (0-100)", "AI Summary", "Matched Job"]
         else:
@@ -14703,7 +14703,7 @@ def taxonomy_retag_one(cand_id):
     with Session(engine) as s:
         cand = s.scalar(select(Candidate).where(Candidate.id == cand_id))
         if not cand:
-            flash("Candidate not found", "warning")
+            flash("Associate not found", "warning")
             return redirect(request.referrer or url_for("resource_pool"))
 
         groups = _get_subject_term_set(s)
@@ -14723,7 +14723,7 @@ def taxonomy_retag_one(cand_id):
 
         s.commit()
 
-    flash(f"Re-tagged candidate #{cand_id}.", "success")
+    flash(f"Re-tagged associate #{cand_id}.", "success")
     return redirect(request.referrer or url_for("resource_pool"))
 
 # --- Candidate ⇄ Tag: add ---
@@ -14738,7 +14738,7 @@ def candidate_tag_add(cand_id: int):
         cand = s.get(Candidate, cand_id)
         tag  = s.get(TaxonomyTag, tag_id)
         if not cand or not tag:
-            flash("Invalid candidate or tag.", "danger")
+            flash("Invalid associate or tag.", "danger")
             return redirect(url_for("candidate_profile", cand_id=cand_id, job_id=request.args.get("job_id")))
 
         # prevent duplicates
@@ -14906,7 +14906,7 @@ def recalculate_match_score():
     """Recalculate AI match score for a candidate (stub - requires Gemini API key)."""
     cand_id = request.form.get("candidate_id")
     if not cand_id:
-        flash("No candidate specified.", "warning")
+        flash("No associate specified.", "warning")
         return redirect(request.referrer or url_for("resource_pool"))
     flash("Match score recalculation requested. This feature requires an active GEMINI_API_KEY.", "info")
     return redirect(url_for("candidate_profile", cand_id=int(cand_id)))
@@ -14988,7 +14988,7 @@ def action_verifile_candidate(cand_id):
 
         s.commit()
 
-    flash(f"Verifile checks started ({len(checks_to_submit)} requested) and candidate record updated.", "success")
+    flash(f"Verifile checks started ({len(checks_to_submit)} requested) and associate record updated.", "success")
     return redirect(url_for("candidate_profile", cand_id=cand_id))
 
 @app.post("/action/request_updated_cv/candidate/<int:cand_id>")
@@ -15290,13 +15290,13 @@ def candidate_shortlist_action():
             candidate = s.get(Candidate, appn.candidate_id)
         else:
             if not (job_id.isdigit() and cand_id.isdigit()):
-                flash("Missing job/candidate parameters.", "warning")
+                flash("Missing job/associate parameters.", "warning")
                 return redirect(next_url or url_for("index"))
             job = s.get(Job, int(job_id))
             candidate = s.get(Candidate, int(cand_id))
 
         if not job or not candidate:
-            flash("Job or candidate not found.", "warning")
+            flash("Job or associate not found.", "warning")
             return redirect(next_url or url_for("index"))
 
         engagement = s.get(Engagement, job.engagement_id) if job.engagement_id else None
@@ -15334,7 +15334,7 @@ def bulk_shortlist():
     job_id = request.form.get("job_id", "").strip()
 
     if not candidate_ids:
-        flash("No candidates selected.", "warning")
+        flash("No associates selected.", "warning")
         return redirect(request.referrer or url_for("resource_pool"))
 
     if not job_id or not job_id.isdigit():
@@ -15373,7 +15373,7 @@ def bulk_shortlist():
 
         s.commit()
 
-    flash(f"Added {added} candidate(s) to {job.title} pipeline.", "success")
+    flash(f"Added {added} associate(s) to {job.title} pipeline.", "success")
     return redirect(request.referrer or url_for("resource_pool"))
 
 
@@ -15389,7 +15389,7 @@ def add_candidate_to_job_pipeline():
     job_id = (request.form.get("job_id") or "").strip()
 
     if not (cand_id.isdigit() and job_id.isdigit()):
-        flash("Missing candidate or job parameters.", "warning")
+        flash("Missing associate or job parameters.", "warning")
         return redirect(next_url or url_for("resource_pool"))
 
     with Session(engine) as s:
@@ -15397,7 +15397,7 @@ def add_candidate_to_job_pipeline():
         job = s.get(Job, int(job_id))
 
         if not candidate or not job:
-            flash("Candidate or job not found.", "warning")
+            flash("Associate or job not found.", "warning")
             return redirect(next_url or url_for("resource_pool"))
 
         # Check if an application already exists for this candidate + job
@@ -15508,7 +15508,7 @@ def candidate_magic():
         session["candidate_id"] = cand.id
         session["candidate_email"] = cand.email
 
-    flash("Signed in as candidate.", "success")
+    flash("Signed in as associate.", "success")
     return redirect(nxt)
 
 @app.route("/candidate/logout")
@@ -15703,7 +15703,7 @@ def download_all_docs(cand_id):
             abort(404)
         docs = s.scalars(select(Document).where(Document.candidate_id == cand_id)).all()
         if not docs:
-            flash("No documents found for this candidate.", "warning")
+            flash("No documents found for this associate.", "warning")
             return redirect(url_for("candidate_profile", cand_id=cand_id))
 
         buf = _io.BytesIO()
@@ -15802,7 +15802,7 @@ def flag_dbs_convictions(cand_id):
             s.commit()
             flash("DBS convictions flagged. Associate must upload their DBS certificate.", "warning")
         else:
-            flash("DBS Check not found for this candidate.", "danger")
+            flash("DBS Check not found for this associate.", "danger")
 
     return redirect(url_for("candidate_profile", cand_id=cand_id))
 
@@ -16010,13 +16010,13 @@ def _validate_check_data(candidate_id, check_type, session_obj):
     missing = []
     cand = session_obj.get(Candidate, candidate_id)
     if not cand:
-        return False, ["Candidate not found"]
+        return False, ["Associate not found"]
 
     # Check candidate-level fields
     for field in reqs.get("candidate_fields", []):
         val = getattr(cand, field, None)
         if not val or (isinstance(val, str) and not val.strip()):
-            missing.append(f"Candidate {field}")
+            missing.append(f"Associate {field}")
 
     # Check profile-level fields
     profile_fields = reqs.get("profile_fields", [])
