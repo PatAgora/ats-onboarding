@@ -109,9 +109,12 @@
             </div>
             {% else %}
             <div class="btn-group">
-                <a href="/portal/vacancies/{{ job.id or job.public_token }}/apply" class="btn-primary">
-                    <i class="fas fa-paper-plane"></i> Apply Now
-                </a>
+                <form method="POST" action="/portal/vacancies/{{ job.id or job.public_token }}/apply" style="display:inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-paper-plane"></i> Apply Now
+                    </button>
+                </form>
                 <a href="/portal/vacancies" class="btn-secondary">
                     Back to Vacancies
                 </a>
