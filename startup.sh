@@ -61,6 +61,31 @@ PYEOF
     fi
 }
 
+# Auto-seed demo data if database is empty
+echo ""
+echo "Checking if database needs seeding..."
+python3 -c "
+from app import engine
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+with Session(engine) as s:
+    try:
+        count = s.execute(text('SELECT COUNT(*) FROM users')).scalar()
+        if count == 0:
+            print('Database empty — running seed_demo.py...')
+            import seed_demo
+            seed_demo.seed()
+        else:
+            print(f'Database has {count} users — skipping seed.')
+    except Exception as e:
+        print(f'Seed check: {e} — running seed anyway...')
+        try:
+            import seed_demo
+            seed_demo.seed()
+        except Exception as e2:
+            print(f'Seed failed: {e2} — continuing without seed data.')
+" 2>&1
+
 # Start application with gunicorn
 echo ""
 echo "Starting gunicorn..."
