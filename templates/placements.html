@@ -836,12 +836,16 @@
         <td class="date-cell">{{ p.end_date.strftime('%d %b %Y') if p.end_date else '—' }}</td>
         <td>
           <div class="d-flex gap-1">
+            {% if p.associate_id %}
             <a href="{{ url_for('candidate_profile', cand_id=p.associate_id) }}" class="action-btn" title="View Profile">
               <i class="fas fa-user"></i>
             </a>
+            {% endif %}
+            {% if p.engagement_id %}
             <a href="{{ url_for('engagement_dashboard', eng_id=p.engagement_id) }}" class="action-btn" title="View Engagement">
               <i class="fas fa-briefcase"></i>
             </a>
+            {% endif %}
           </div>
         </td>
       </tr>

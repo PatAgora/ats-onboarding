@@ -453,12 +453,12 @@
     <h2 class="section-title">
       <i class="fas fa-list"></i>
       Applications List
-      {% if rows and rows|length %}
-        <span class="badge-modern badge-secondary">{{ pagination.total if pagination else rows|length }} total</span>
+      {% if items and items|length %}
+        <span class="badge-modern badge-secondary">{{ pagination.total if pagination else items|length }} total</span>
       {% endif %}
     </h2>
 
-    {% if rows and rows|length %}
+    {% if items and items|length %}
       <div class="table-responsive" style="border-radius: 12px; overflow: hidden;">
         <table class="modern-table">
           <thead>
@@ -472,7 +472,7 @@
             </tr>
           </thead>
           <tbody>
-            {% for r in rows %}
+            {% for r in items %}
             <tr>
               <td>
                 <span class="row-number">
