@@ -1034,11 +1034,11 @@
           {# REQ-274: General Skip/Unskip stage dropdown #}
           <div class="dropdown d-inline-block">
             <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
-                    data-bs-toggle="dropdown" aria-expanded="false" title="Skip / Move stage"
+                    data-bs-toggle="dropdown" data-bs-strategy="fixed" aria-expanded="false" title="Skip / Move stage"
                     style="padding:0.2rem 0.4rem;font-size:0.6rem;">
               <i class="fas fa-forward"></i>
             </button>
-            <ul class="dropdown-menu dropdown-menu-end" style="font-size:0.75rem;min-width:180px;">
+            <ul class="dropdown-menu dropdown-menu-end" style="font-size:0.75rem;min-width:180px;z-index:9999;">
               <li class="dropdown-header">Skip to...</li>
               {% for target in stages %}
                 {% if target.id != stage.id %}
