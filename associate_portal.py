@@ -2965,8 +2965,15 @@ def vacancy_apply(job_id):
                 status="Pipeline",
             )
             s.add(app)
-            _add_note(s, cand_id, f"Applied for {job.title} via Associate Portal.")
+            s.flush()
+            app_id = app.id
+            print(f"[PORTAL] Application flushed: candidate_id={cand_id}, job_id={job_id}, app_id={app_id}, status=Pipeline, job_engagement_id={job.engagement_id}")
+            try:
+                _add_note(s, cand_id, f"Applied for {job.title} via Associate Portal.")
+            except Exception as e:
+                print(f"[PORTAL] Note failed (non-fatal): {e}")
             s.commit()
+            print(f"[PORTAL] Application committed successfully: app_id={app_id}")
 
         flash(f"Application submitted for {job.title}.", "success")
         return redirect(url_for("associate.vacancy_detail", job_id=job_id))
