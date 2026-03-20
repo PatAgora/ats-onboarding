@@ -1255,7 +1255,11 @@ let selectedCandidateId = null;
 
 function filterChartByCandidate(candId, candName) {
   selectedCandidateId = candId;
+  console.log('[VETTING DEBUG] filterChartByCandidate called:', candId, candName);
+  console.log('[VETTING DEBUG] checkTypeByCandidate keys:', Object.keys(checkTypeByCandidate));
+  console.log('[VETTING DEBUG] checkTypeByCandidate full:', JSON.stringify(checkTypeByCandidate));
   const data = checkTypeByCandidate[String(candId)] || checkTypeByCandidate[candId] || {};
+  console.log('[VETTING DEBUG] data for candidate:', JSON.stringify(data));
   updateCheckTypeChart(data);
   document.getElementById('checkTypeChartTitle').textContent = candName;
   document.getElementById('checkTypeShowAll').style.display = 'inline';
