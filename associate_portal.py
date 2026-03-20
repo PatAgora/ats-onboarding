@@ -940,21 +940,21 @@ def set_password():
     password = request.form.get("password", "")
     confirm = request.form.get("confirm_password", "")
 
-    if password != confirm:
-        flash("Passwords do not match.", "danger")
-        return redirect(url_for("associate.set_password"))
-
-    valid, msg = _validate_password(password)
-    if not valid:
-        flash(msg, "danger")
-        return redirect(url_for("associate.set_password"))
-
     with SASession(engine) as s:
         cand = s.get(Candidate, cand_id)
         if not cand:
             session.pop("associate_setup_password_id", None)
             flash("Account not found.", "danger")
             return redirect(url_for("associate.register"))
+
+        if password != confirm:
+            flash("Passwords do not match.", "danger")
+            return render_template("associate/auth_set_password.html", name=cand.name, email=cand.email)
+
+        valid, msg = _validate_password(password)
+        if not valid:
+            flash(msg, "danger")
+            return render_template("associate/auth_set_password.html", name=cand.name, email=cand.email)
 
         cand.set_password(password)
         s.commit()
@@ -964,8 +964,8 @@ def set_password():
         session.pop("associate_setup_password_id", None)
         session.pop("associate_setup_password_ts", None)
 
-    flash("Password set successfully. Now set up two-factor authentication.", "success")
-    return redirect(url_for("associate.setup_2fa"))
+        flash("Password set successfully. Now set up two-factor authentication.", "success")
+        return redirect(url_for("associate.setup_2fa"))
 
 
 @associate_bp.route("/setup-2fa", methods=["GET", "POST"])
