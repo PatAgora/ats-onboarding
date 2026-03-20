@@ -1184,10 +1184,10 @@
       </div>
       <div id="vettingCandidateList" style="display: none; max-height: 200px; overflow-y: auto; margin-bottom: 0.5rem;">
         {% for vc in vetting_summary.candidates if vc.status == 'in_progress' %}
-        <a href="{{ url_for('candidate_profile', cand_id=vc.id) }}"
+        <a href="#" onclick="event.preventDefault(); filterChartByCandidate({{ vc.id }}, '{{ vc.name }}')"
            class="d-flex justify-content-between align-items-center vetting-candidate-row"
-           data-sla-status="{{ vc.sla_status }}"
-           style="padding: 0.3rem 0.5rem; font-size: 0.75rem; text-decoration: none; color: #374151; border-bottom: 1px solid #f3f4f6; display: block;">
+           data-sla-status="{{ vc.sla_status }}" data-cand-id="{{ vc.id }}"
+           style="padding: 0.3rem 0.5rem; font-size: 0.75rem; text-decoration: none; color: #374151; border-bottom: 1px solid #f3f4f6; display: block; cursor: pointer;">
           <span style="font-weight: 500;">{{ vc.name }}</span>
           <span>
             <span style="color: #6b7280;">{{ vc.complete }}/{{ vc.total }}</span>
@@ -1206,7 +1206,10 @@
 
       <!-- By Check Type Chart -->
       <hr class="my-2">
-      <div style="font-size: 0.75rem; color: #6b7280; font-weight: 500; margin-bottom: 0.5rem;">Outstanding by Check Type</div>
+      <div class="d-flex justify-content-between align-items-center" style="margin-bottom: 0.5rem;">
+        <span style="font-size: 0.75rem; color: #6b7280; font-weight: 500;" id="checkTypeChartTitle">Outstanding by Check Type</span>
+        <a href="#" id="checkTypeShowAll" onclick="event.preventDefault(); resetChartToAll()" style="font-size: 0.65rem; color: #3b82f6; text-decoration: none; display: none;">Show All</a>
+      </div>
       <div style="height: 220px; position: relative;">
         <canvas id="checkTypeChart"></canvas>
       </div>
@@ -1247,6 +1250,42 @@
 const checkTypeDataAll = {{ vetting_summary.by_type | tojson | safe }};
 const checkTypeDataInSla = {{ vetting_summary.by_type_in_sla | tojson | safe }};
 const checkTypeDataOutSla = {{ vetting_summary.by_type_out_sla | tojson | safe }};
+const checkTypeByCandidate = {{ vetting_summary.by_candidate | tojson | safe }};
+let selectedCandidateId = null;
+
+function filterChartByCandidate(candId, candName) {
+  selectedCandidateId = candId;
+  const data = checkTypeByCandidate[candId] || {};
+  updateCheckTypeChart(data);
+  document.getElementById('checkTypeChartTitle').textContent = candName;
+  document.getElementById('checkTypeShowAll').style.display = 'inline';
+  // Highlight selected row
+  document.querySelectorAll('.vetting-candidate-row').forEach(r => {
+    r.style.background = r.dataset.candId == candId ? '#eff6ff' : '';
+    r.style.fontWeight = r.dataset.candId == candId ? '600' : '';
+  });
+}
+
+function resetChartToAll() {
+  selectedCandidateId = null;
+  updateCheckTypeChart(checkTypeDataAll);
+  document.getElementById('checkTypeChartTitle').textContent = 'Outstanding by Check Type';
+  document.getElementById('checkTypeShowAll').style.display = 'none';
+  document.querySelectorAll('.vetting-candidate-row').forEach(r => {
+    r.style.background = '';
+    r.style.fontWeight = '';
+  });
+}
+
+function updateCheckTypeChart(data) {
+  if (!checkTypeChart) return;
+  const labels = Object.keys(data).map(l => l.length > 18 ? l.substring(0, 15) + '...' : l);
+  checkTypeFullLabels = Object.keys(data);
+  const outstanding = Object.values(data).map(d => (d.in_progress || 0) + (d.not_started || 0));
+  checkTypeChart.data.labels = labels;
+  checkTypeChart.data.datasets[0].data = outstanding;
+  checkTypeChart.update();
+}
 
 // Initialize check type chart
 let checkTypeChart = null;

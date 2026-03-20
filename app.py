@@ -6989,6 +6989,7 @@ def workflow():
         vetting_by_type = {}
         vetting_by_type_in_sla = {}
         vetting_by_type_out_sla = {}
+        vetting_by_candidate = {}
         vetting_candidates = []  # List of candidates with their SLA status
         
         # SLA-filtered counts
@@ -7141,6 +7142,22 @@ def workflow():
             vetting_by_type = check_type_all
             vetting_by_type_in_sla = check_type_in_sla
             vetting_by_type_out_sla = check_type_out_sla
+
+            # Per-candidate check type breakdown (for chart filtering)
+            vetting_by_candidate = {}
+            for row in check_type_with_sla:
+                check_type, check_status, cand_id_val, _ = row
+                if cand_id_val not in vetting_by_candidate:
+                    vetting_by_candidate[cand_id_val] = {}
+                if check_type not in vetting_by_candidate[cand_id_val]:
+                    vetting_by_candidate[cand_id_val][check_type] = {"total": 0, "complete": 0, "in_progress": 0, "not_started": 0}
+                vetting_by_candidate[cand_id_val][check_type]["total"] += 1
+                if check_status == "Complete":
+                    vetting_by_candidate[cand_id_val][check_type]["complete"] += 1
+                elif check_status == "In Progress":
+                    vetting_by_candidate[cand_id_val][check_type]["in_progress"] += 1
+                else:
+                    vetting_by_candidate[cand_id_val][check_type]["not_started"] += 1
             
         except Exception as e:
             # VettingCheck table might not exist yet
@@ -7159,6 +7176,7 @@ def workflow():
             "by_type_in_sla": vetting_by_type_in_sla,
             "by_type_out_sla": vetting_by_type_out_sla,
             "candidates": vetting_candidates,
+            "by_candidate": vetting_by_candidate,
             # SLA-filtered status counts
             "not_started_in_sla": vetting_not_started_in_sla,
             "not_started_out_sla": vetting_not_started_out_sla,
