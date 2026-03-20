@@ -1255,7 +1255,7 @@ let selectedCandidateId = null;
 
 function filterChartByCandidate(candId, candName) {
   selectedCandidateId = candId;
-  const data = checkTypeByCandidate[candId] || {};
+  const data = checkTypeByCandidate[String(candId)] || checkTypeByCandidate[candId] || {};
   updateCheckTypeChart(data);
   document.getElementById('checkTypeChartTitle').textContent = candName;
   document.getElementById('checkTypeShowAll').style.display = 'inline';
