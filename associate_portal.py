@@ -2938,16 +2938,19 @@ def vacancy_apply(job_id):
         if cv_file and cv_file.filename:
             # Validate file type
             allowed_ext = {'.pdf', '.doc', '.docx'}
-            ext = os.path.splitext(cv_file.filename)[1].lower()
+            from werkzeug.utils import secure_filename as _secure
+            original_name = cv_file.filename
+            ext = os.path.splitext(original_name)[1].lower()
             if ext not in allowed_ext:
                 flash("CV must be a PDF, DOC, or DOCX file.", "danger")
                 return redirect(url_for("associate.vacancy_detail", job_id=job_id))
 
-            # Save the CV
-            upload_dir = _upload_dir()
-            unique_name = f"cv_{cand_id}_{_secrets.token_hex(6)}{ext}"
-            save_path = os.path.join(upload_dir, unique_name)
-            cv_file.save(save_path)
+            # Save the CV to the main uploads/cvs directory
+            safe_name = _secure(original_name)
+            unique_name = f"{_secrets.token_hex(8)}_{safe_name}"
+            upload_dir = os.path.join(current_app.root_path, "uploads", "cvs")
+            os.makedirs(upload_dir, exist_ok=True)
+            cv_file.save(os.path.join(upload_dir, unique_name))
 
             # Update candidate record
             if cand:
@@ -2957,8 +2960,8 @@ def vacancy_apply(job_id):
             if Document:
                 doc = Document(
                     candidate_id=cand_id,
-                    filename=cv_file.filename,
-                    file_path=unique_name,
+                    filename=unique_name,
+                    original_name=original_name,
                     doc_type="cv",
                 )
                 s.add(doc)
