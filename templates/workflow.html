@@ -569,7 +569,8 @@
 
   .info-card {
     flex: 1;
-    min-width: 280px;
+    min-width: 260px;
+    max-width: 380px;
     background: white;
     border-radius: 10px;
     padding: 0.75rem;
@@ -1210,7 +1211,7 @@
         <span style="font-size: 0.75rem; color: #6b7280; font-weight: 500;" id="checkTypeChartTitle">Outstanding by Check Type</span>
         <a href="#" id="checkTypeShowAll" onclick="event.preventDefault(); resetChartToAll()" style="font-size: 0.65rem; color: #3b82f6; text-decoration: none; display: none;">Show All</a>
       </div>
-      <div style="height: 160px; position: relative;">
+      <div style="height: 180px; position: relative;">
         <canvas id="checkTypeChart"></canvas>
       </div>
     </div>
@@ -1282,13 +1283,14 @@ function resetChartToAll() {
 }
 
 function updateCheckTypeChart(data) {
-  if (!checkTypeChart) return;
+  if (!checkTypeChart) { console.log('[VETTING DEBUG] checkTypeChart is null!'); return; }
   const labels = Object.keys(data).map(l => l.length > 18 ? l.substring(0, 15) + '...' : l);
   checkTypeFullLabels = Object.keys(data);
   const outstanding = Object.values(data).map(d => (d.in_progress || 0) + (d.not_started || 0));
+  console.log('[VETTING DEBUG] updateCheckTypeChart labels:', labels, 'data:', outstanding);
   checkTypeChart.data.labels = labels;
   checkTypeChart.data.datasets[0].data = outstanding;
-  checkTypeChart.update();
+  checkTypeChart.update('none');
 }
 
 // Initialize check type chart
