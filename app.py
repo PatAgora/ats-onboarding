@@ -12483,6 +12483,29 @@ def engagement_dashboard(eng_id):
         totals_row['scheduled'] = sum(role_metrics.get(r, {}).get('scheduled', 0) for r in display_roles)
         totals_row['left_to_fill'] = sum(role_metrics.get(r, {}).get('left_to_fill', 0) for r in display_roles)
 
+        # --- Scheduled starters (Offered/Accepted/Ready to Contract) ---
+        scheduled_associates = []
+        sched_apps_q = (
+            select(Application, Candidate, Job)
+            .join(Candidate, Candidate.id == Application.candidate_id)
+            .join(Job, Job.id == Application.job_id)
+            .where(
+                Job.engagement_id == eng_id,
+                Application.status.in_(['Offered', 'Accepted', 'Ready to Contract'])
+            )
+            .order_by(Application.created_at.desc())
+        )
+        sched_results = s.execute(sched_apps_q).all()
+        for app, cand, job in sched_results:
+            scheduled_associates.append({
+                'id': cand.id,
+                'name': cand.name,
+                'email': cand.email,
+                'role': job.role_type or job.title,
+                'ai_score': app.ai_score or 0,
+                'status': app.status
+            })
+
         # --- Associates on this engagement (with AI scores) ---
         associates_on_engagement = []
         signed_apps_q = (
@@ -12539,6 +12562,7 @@ def engagement_dashboard(eng_id):
             tile_contract_issued=tile_contract_issued,
             tile_contract_signed=tile_contract_signed,
             associates_on_engagement=associates_on_engagement,
+            scheduled_associates=scheduled_associates,
             rate_data=rate_data,
             intake_by_role=intake_by_role,
         )
@@ -12873,7 +12897,7 @@ def engagement_plan(eng_id):
                 )
             ) or 0
             
-            # Scheduled Starters: count of "Offer" or "Onboarding" stage (not yet signed)
+            # Scheduled Starters: count of "Offered", "Accepted", or "Ready to Contract" stage (not yet signed)
             scheduled_count = s.scalar(
                 select(func.count())
                 .select_from(Application)
@@ -12881,7 +12905,7 @@ def engagement_plan(eng_id):
                 .where(
                     Job.engagement_id == eng_id,
                     Job.role_type == role_type,
-                    Application.status.in_(['Offer', 'Onboarding'])
+                    Application.status.in_(['Offered', 'Accepted', 'Ready to Contract'])
                 )
             ) or 0
             

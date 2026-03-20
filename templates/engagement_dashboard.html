@@ -1116,7 +1116,7 @@
   // Delivery Modal Functions
   const associatesData = {
     on_contract: {{ associates_on_engagement | tojson if associates_on_engagement else '[]' }},
-    scheduled: [],
+    scheduled: {{ scheduled_associates | tojson if scheduled_associates else '[]' }},
     left_to_fill: [],
     target: []
   };
@@ -1152,6 +1152,22 @@
             <div class="associate-info">
               <div class="associate-name">${a.name || 'Unknown'}</div>
               <div class="associate-role">${a.role || 'No role'} • AI Score: ${a.ai_score || 0}</div>
+            </div>
+            <div class="associate-actions">
+              <a href="/candidate/${a.id}" class="btn btn-modern-outline btn-sm">
+                <i class="fas fa-user"></i> View Profile
+              </a>
+            </div>
+          </li>
+        `;
+      });
+    } else if (type === 'scheduled' && associates.length > 0) {
+      associates.forEach((a, idx) => {
+        html += `
+          <li class="associate-item" data-name="${(a.name || '').toLowerCase()}" data-role="${(a.role || '').toLowerCase()}">
+            <div class="associate-info">
+              <div class="associate-name">${a.name || 'Unknown'}</div>
+              <div class="associate-role">${a.role || 'No role'} • Stage: ${a.status || 'Unknown'}</div>
             </div>
             <div class="associate-actions">
               <a href="/candidate/${a.id}" class="btn btn-modern-outline btn-sm">
