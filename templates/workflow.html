@@ -1183,7 +1183,7 @@
       <div style="font-size: 0.75rem; color: #6b7280; font-weight: 500; margin-bottom: 0.5rem; cursor: pointer;" onclick="document.getElementById('vettingCandidateList').style.display = document.getElementById('vettingCandidateList').style.display === 'none' ? 'block' : 'none'">
         <i class="fas fa-users me-1"></i>Candidates In Vetting <i class="fas fa-chevron-down" style="font-size: 0.6rem;"></i>
       </div>
-      <div id="vettingCandidateList" style="display: none; max-height: 200px; overflow-y: auto; margin-bottom: 0.5rem;">
+      <div id="vettingCandidateList" style="max-height: 200px; overflow-y: auto; margin-bottom: 0.5rem;">
         {% for vc in vetting_summary.candidates if vc.status == 'in_progress' %}
         <a href="#" onclick="event.preventDefault(); filterChartByCandidate({{ vc.id }}, '{{ vc.name }}')"
            class="d-flex justify-content-between align-items-center vetting-candidate-row"
@@ -1261,7 +1261,7 @@ function filterChartByCandidate(candId, candName) {
   console.log('[VETTING DEBUG] checkTypeByCandidate full:', JSON.stringify(checkTypeByCandidate));
   const data = checkTypeByCandidate[String(candId)] || checkTypeByCandidate[candId] || {};
   console.log('[VETTING DEBUG] data for candidate:', JSON.stringify(data));
-  updateCheckTypeChart(data);
+  updateChartWithData(data);
   document.getElementById('checkTypeChartTitle').textContent = candName;
   document.getElementById('checkTypeShowAll').style.display = 'inline';
   // Highlight selected row
@@ -1273,7 +1273,7 @@ function filterChartByCandidate(candId, candName) {
 
 function resetChartToAll() {
   selectedCandidateId = null;
-  updateCheckTypeChart(checkTypeDataAll);
+  updateChartWithData(checkTypeDataAll);
   document.getElementById('checkTypeChartTitle').textContent = 'Outstanding by Check Type';
   document.getElementById('checkTypeShowAll').style.display = 'none';
   document.querySelectorAll('.vetting-candidate-row').forEach(r => {
@@ -1282,12 +1282,12 @@ function resetChartToAll() {
   });
 }
 
-function updateCheckTypeChart(data) {
+function updateChartWithData(data) {
   if (!checkTypeChart) { console.log('[VETTING DEBUG] checkTypeChart is null!'); return; }
   const labels = Object.keys(data).map(l => l.length > 18 ? l.substring(0, 15) + '...' : l);
   checkTypeFullLabels = Object.keys(data);
   const outstanding = Object.values(data).map(d => (d.in_progress || 0) + (d.not_started || 0));
-  console.log('[VETTING DEBUG] updateCheckTypeChart labels:', labels, 'data:', outstanding);
+  console.log('[VETTING DEBUG] updateChartWithData labels:', labels, 'data:', outstanding);
   checkTypeChart.data.labels = labels;
   checkTypeChart.data.datasets[0].data = outstanding;
   checkTypeChart.update('none');
