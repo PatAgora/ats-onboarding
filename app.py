@@ -4414,6 +4414,7 @@ def _rebuild_ai_summary_and_tags(s, cand, doc=None, job=None, appn=None):
     # Safely extract text (prefer project helper)
     def _safe_extract_text(file_path: str, original_name: str) -> str:
         name = (original_name or file_path).lower()
+        print(f"[CV] Extracting text from: {file_path} (name={name})")
         # PDF
         if name.endswith(".pdf"):
             try:
@@ -4421,20 +4422,26 @@ def _rebuild_ai_summary_and_tags(s, cand, doc=None, job=None, appn=None):
                 with pdfplumber.open(file_path) as pdf:
                     bits = [(p.extract_text() or "") for p in pdf.pages]
                 txt = "\n".join(bits).strip()
+                print(f"[CV] PDF extracted {len(txt)} chars")
                 if txt:
                     return txt
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"[CV] PDF extraction failed: {e}")
         # DOCX
         if name.endswith(".docx"):
             try:
                 import docx
                 d = docx.Document(file_path)
                 txt = "\n".join([p.text for p in d.paragraphs]).strip()
+                print(f"[CV] DOCX extracted {len(txt)} chars")
                 if txt:
                     return txt
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"[CV] DOCX extraction failed: {e}")
+        # DOC (legacy .doc format)
+        if name.endswith(".doc") and not name.endswith(".docx"):
+            print(f"[CV] Legacy .doc format — extraction not supported")
+            return ""
         # Plain text
         try:
             with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
@@ -4453,12 +4460,16 @@ def _rebuild_ai_summary_and_tags(s, cand, doc=None, job=None, appn=None):
         except Exception:
             cv_text = ""
 
-    # Generate summary (fallback to skills if no text at all)
-    try:
-        summary = ai_summarise(cv_text or (cand.skills or "")) if (cv_text or cand.skills) else ""
-    except Exception as e:
-        summary = ""
-        current_app.logger.exception("ai_summarise failed: %s", e)
+    # Generate summary — only from actual CV text, never fabricate
+    if not cv_text:
+        summary = "Unable to retrieve information from CV."
+        print(f"[AI] No CV text extracted for candidate {cand.id} ({cand.name})")
+    else:
+        try:
+            summary = ai_summarise(cv_text)
+        except Exception as e:
+            summary = "Unable to retrieve information from CV."
+            current_app.logger.exception("ai_summarise failed: %s", e)
 
     # Choose target application
     target_app = appn
