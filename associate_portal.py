@@ -2871,13 +2871,9 @@ def vacancy_detail(job_id):
             already_applied = existing is not None
 
         # Check if associate has a CV on file
-        Candidate = _model("Candidate")
         Document = _model("Document")
-        cand = s.get(Candidate, cand_id) if Candidate else None
         has_cv = False
-        if cand and cand.cv_filename:
-            has_cv = True
-        elif Document:
+        if Document:
             cv_doc = s.query(Document).filter_by(
                 candidate_id=cand_id, doc_type="cv"
             ).first()
@@ -2924,8 +2920,8 @@ def vacancy_apply(job_id):
 
         # Check if CV is on file
         cand = s.get(Candidate, cand_id) if Candidate else None
-        has_cv = bool(cand and cand.cv_filename)
-        if not has_cv and Document:
+        has_cv = False
+        if Document:
             cv_doc = s.query(Document).filter_by(candidate_id=cand_id, doc_type="cv").first()
             has_cv = cv_doc is not None
 
@@ -2951,10 +2947,6 @@ def vacancy_apply(job_id):
             upload_dir = os.path.join(current_app.root_path, "uploads", "cvs")
             os.makedirs(upload_dir, exist_ok=True)
             cv_file.save(os.path.join(upload_dir, unique_name))
-
-            # Update candidate record
-            if cand:
-                cand.cv_filename = unique_name
 
             # Create Document record
             if Document:
