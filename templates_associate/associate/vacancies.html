@@ -9,6 +9,19 @@
 {% endblock %}
 
 {% block content %}
+<style>
+.vacancy-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+@media (max-width: 992px) {
+    .vacancy-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+    .vacancy-grid { grid-template-columns: 1fr; }
+}
+</style>
 <!-- Search & Filters -->
 <div class="portal-card mb-3">
     <div class="portal-card-body">
@@ -51,7 +64,7 @@
 
 <!-- Vacancy Cards Grid -->
 {% if jobs %}
-<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 350px)); gap: 20px;">
+<div class="vacancy-grid">
     {% for job in jobs %}
     <div class="portal-card" style="display: flex; flex-direction: column;">
         <div class="portal-card-body" style="flex: 1; display: flex; flex-direction: column;">
