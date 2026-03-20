@@ -242,6 +242,37 @@ def system_status():
 # - User email addresses (/system/list-users)
 # Removed for CREST compliance
 
+@app.route("/system/db-check")
+def system_db_check():
+    """Temporary diagnostic — check candidate and application counts."""
+    with Session(engine) as s:
+        total_cands = s.execute(text("SELECT COUNT(*) FROM candidates")).scalar()
+        portal_cands = s.execute(text("SELECT COUNT(*) FROM candidates WHERE source = 'associate-portal'")).scalar()
+        total_apps = s.execute(text("SELECT COUNT(*) FROM applications")).scalar()
+        pipeline_apps = s.execute(text("SELECT COUNT(*) FROM applications WHERE status = 'Pipeline'")).scalar()
+        # Find portal candidates
+        portal_rows = s.execute(text(
+            "SELECT id, name, email, source, created_at FROM candidates WHERE source = 'associate-portal' ORDER BY created_at DESC LIMIT 10"
+        )).all()
+        # Find recent applications
+        recent_apps = s.execute(text(
+            "SELECT a.id, a.candidate_id, a.job_id, a.status, a.created_at, c.name "
+            "FROM applications a JOIN candidates c ON c.id = a.candidate_id "
+            "ORDER BY a.created_at DESC LIMIT 10"
+        )).all()
+        return {
+            "total_candidates": total_cands,
+            "portal_candidates": portal_cands,
+            "total_applications": total_apps,
+            "pipeline_applications": pipeline_apps,
+            "portal_users": [
+                {"id": r[0], "name": r[1], "email": r[2], "source": r[3], "created_at": str(r[4])} for r in portal_rows
+            ],
+            "recent_applications": [
+                {"app_id": r[0], "candidate_id": r[1], "job_id": r[2], "status": r[3], "created_at": str(r[4]), "name": r[5]} for r in recent_apps
+            ],
+        }
+
 
 @app.context_processor
 def inject_template_helpers():
