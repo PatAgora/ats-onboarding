@@ -8174,7 +8174,6 @@ def placements_export_csv():
 # ============== PROJECTS PAGE ==============
 @login_required
 @app.route("/projects")
-@login_required
 def projects():
     """
     Projects landing page showing pipeline overview.
@@ -8278,32 +8277,32 @@ def projects():
                 .where(EngagementPlan.role_type.isnot(None), EngagementPlan.role_type != "")
             ).all()
             engagement_roles[eng.id] = roles
-    
-    return render_template(
-        "projects.html",
-        opportunities=opportunities,
-        all_opportunities=opportunities,  # For the filter dropdowns
-        engagements=engagements,
-        all_clients=all_clients,
-        all_roles=all_roles,
-        engagement_roles=engagement_roles,
-        status_filter=status_filter,
-        client_filter=client_filter,
-        pipeline_stages=kanban_stages,
-        stage_data=stage_data,
-        active_engagements=active_engagements,
-        active_count=active_count,
-        completed_count=completed_count,
-        total_pipeline=total_pipeline,
-        total_value=total_value,
-        weighted_value=weighted_value,
-        closed_won_count=closed_won_count,
-        closed_lost_count=closed_lost_count,
-        closed_won_value=closed_won_value,
-        closed_lost_value=closed_lost_value,
-        closed_won_opps=closed_won_opps,
-        closed_lost_opps=closed_lost_opps,
-    )
+
+        return render_template(
+            "projects.html",
+            opportunities=opportunities,
+            all_opportunities=opportunities,  # For the filter dropdowns
+            engagements=engagements,
+            all_clients=all_clients,
+            all_roles=all_roles,
+            engagement_roles=engagement_roles,
+            status_filter=status_filter,
+            client_filter=client_filter,
+            pipeline_stages=kanban_stages,
+            stage_data=stage_data,
+            active_engagements=active_engagements,
+            active_count=active_count,
+            completed_count=completed_count,
+            total_pipeline=total_pipeline,
+            total_value=total_value,
+            weighted_value=weighted_value,
+            closed_won_count=closed_won_count,
+            closed_lost_count=closed_lost_count,
+            closed_won_value=closed_won_value,
+            closed_lost_value=closed_lost_value,
+            closed_won_opps=closed_won_opps,
+            closed_lost_opps=closed_lost_opps,
+        )
 
 @login_required
 @app.route("/engagements/create", methods=["GET", "POST"])
