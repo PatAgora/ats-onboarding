@@ -2870,11 +2870,25 @@ def vacancy_detail(job_id):
             ).first()
             already_applied = existing is not None
 
+        # Check if associate has a CV on file
+        Candidate = _model("Candidate")
+        Document = _model("Document")
+        cand = s.get(Candidate, cand_id) if Candidate else None
+        has_cv = False
+        if cand and cand.cv_filename:
+            has_cv = True
+        elif Document:
+            cv_doc = s.query(Document).filter_by(
+                candidate_id=cand_id, doc_type="cv"
+            ).first()
+            has_cv = cv_doc is not None
+
         return render_template(
             "associate/vacancy_detail.html",
             job=job,
             engagement=engagement,
             already_applied=already_applied,
+            has_cv=has_cv,
         )
 
 
@@ -2886,9 +2900,11 @@ def vacancy_detail(job_id):
 @_require_login
 def vacancy_apply(job_id):
     """P2: Apply for a vacancy from the portal."""
+    import secrets as _secrets
     Job = _model("Job")
     Application = _model("Application")
     Candidate = _model("Candidate")
+    Document = _model("Document")
     engine = _engine()
     cand_id = _get_associate_id()
 
@@ -2906,6 +2922,48 @@ def vacancy_apply(job_id):
                 flash("You have already applied for this role.", "info")
                 return redirect(url_for("associate.vacancy_detail", job_id=job_id))
 
+        # Check if CV is on file
+        cand = s.get(Candidate, cand_id) if Candidate else None
+        has_cv = bool(cand and cand.cv_filename)
+        if not has_cv and Document:
+            cv_doc = s.query(Document).filter_by(candidate_id=cand_id, doc_type="cv").first()
+            has_cv = cv_doc is not None
+
+        # Handle CV upload if no CV on file
+        cv_file = request.files.get("cv_file")
+        if not has_cv and not cv_file:
+            flash("Please upload your CV to apply.", "danger")
+            return redirect(url_for("associate.vacancy_detail", job_id=job_id))
+
+        if cv_file and cv_file.filename:
+            # Validate file type
+            allowed_ext = {'.pdf', '.doc', '.docx'}
+            ext = os.path.splitext(cv_file.filename)[1].lower()
+            if ext not in allowed_ext:
+                flash("CV must be a PDF, DOC, or DOCX file.", "danger")
+                return redirect(url_for("associate.vacancy_detail", job_id=job_id))
+
+            # Save the CV
+            upload_dir = _upload_dir()
+            unique_name = f"cv_{cand_id}_{_secrets.token_hex(6)}{ext}"
+            save_path = os.path.join(upload_dir, unique_name)
+            cv_file.save(save_path)
+
+            # Update candidate record
+            if cand:
+                cand.cv_filename = unique_name
+
+            # Create Document record
+            if Document:
+                doc = Document(
+                    candidate_id=cand_id,
+                    filename=cv_file.filename,
+                    file_path=unique_name,
+                    doc_type="cv",
+                )
+                s.add(doc)
+
+        if Application:
             app = Application(
                 candidate_id=cand_id,
                 job_id=job_id,

@@ -108,17 +108,31 @@
                 </div>
             </div>
             {% else %}
-            <div class="btn-group">
-                <form method="POST" action="/portal/vacancies/{{ job.id or job.public_token }}/apply" style="display:inline;">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <form method="POST" action="/portal/vacancies/{{ job.id or job.public_token }}/apply" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {% if not has_cv %}
+                <div style="margin-bottom: 16px; padding: 16px; background: var(--color-gray-50, #f9fafb); border-radius: 8px; border: 1px solid var(--color-gray-200, #e5e7eb);">
+                    <label style="display: block; font-weight: 600; font-size: 0.875rem; color: #374151; margin-bottom: 8px;">
+                        <i class="fas fa-file-pdf" style="color: #ef4444; margin-right: 4px;"></i> CV / Resume <span style="color: #ef4444;">*</span>
+                    </label>
+                    <p style="font-size: 0.8rem; color: #6b7280; margin-bottom: 8px;">Please upload your CV to apply. Accepted formats: PDF, DOC, DOCX (max 10MB)</p>
+                    <input type="file" name="cv_file" accept=".pdf,.doc,.docx" required
+                           style="font-size: 0.85rem; width: 100%;">
+                </div>
+                {% else %}
+                <p style="font-size: 0.8rem; color: #10b981; margin-bottom: 12px;">
+                    <i class="fas fa-check-circle"></i> CV on file — will be attached to your application.
+                </p>
+                {% endif %}
+                <div class="btn-group">
                     <button type="submit" class="btn-primary">
                         <i class="fas fa-paper-plane"></i> Apply Now
                     </button>
-                </form>
-                <a href="/portal/vacancies" class="btn-secondary">
-                    Back to Vacancies
-                </a>
-            </div>
+                    <a href="/portal/vacancies" class="btn-secondary">
+                        Back to Vacancies
+                    </a>
+                </div>
+            </form>
             {% endif %}
         </div>
     </div>
