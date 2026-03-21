@@ -2350,18 +2350,28 @@ def admin_portal_user_update(cand_id: int):
 @login_required
 @app.route("/admin/portal-users/<int:cand_id>/delete", methods=["POST"])
 def admin_portal_user_delete(cand_id: int):
-    """Delete a portal user."""
+    """Delete a portal user — blocked if they have applications."""
     with Session(engine) as s:
         cand = s.get(Candidate, cand_id)
         if not cand:
             flash("Associate not found", "danger")
             return redirect(url_for("admin_portal_users"))
-        
+
+        # Block deletion if candidate has applications
+        app_count = s.scalar(
+            select(func.count()).select_from(Application).where(Application.candidate_id == cand_id)
+        ) or 0
+        if app_count > 0:
+            flash(f"Cannot delete {cand.name} — they have {app_count} application(s). Remove applications first.", "danger")
+            return redirect(url_for("admin_portal_user_detail", cand_id=cand_id))
+
         name = cand.name
+        log_audit_event('delete', 'data_access', f'Deleted portal user: {name} (id={cand_id})',
+                        extra_data={"candidate_id": cand_id})
         s.delete(cand)
         s.commit()
         flash(f"Portal user {name} deleted", "success")
-    
+
     return redirect(url_for("admin_portal_users"))
 
 @login_required
