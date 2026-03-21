@@ -4904,7 +4904,7 @@ CANDIDATE CV:
 """
             import google.generativeai as genai
             gen_config = genai.GenerationConfig(
-                max_output_tokens=1200,
+                max_output_tokens=2500,
                 temperature=0.3,
             )
             resp = model.generate_content(prompt, generation_config=gen_config)
