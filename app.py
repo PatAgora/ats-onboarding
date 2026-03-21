@@ -2373,9 +2373,19 @@ def admin_portal_user_delete(cand_id: int):
         s.execute(delete(VettingCheck).where(VettingCheck.candidate_id == cand_id))
         s.execute(delete(Shortlist).where(Shortlist.candidate_id == cand_id))
         s.execute(delete(CandidateTag).where(CandidateTag.candidate_id == cand_id))
+        s.execute(delete(Document).where(Document.candidate_id == cand_id))
+        try:
+            s.execute(delete(CandidateNote).where(CandidateNote.candidate_id == cand_id))
+        except Exception:
+            pass
+        # Clean up associate profile if exists
+        try:
+            s.execute(text("DELETE FROM associate_profiles WHERE candidate_id = :cid"), {"cid": cand_id})
+        except Exception:
+            pass
 
         log_audit_event('delete', 'data_access', f'Deleted portal user: {name} (id={cand_id})',
-                        extra_data={"candidate_id": cand_id, "applications_deleted": len(app_ids)})
+                        details={"candidate_id": cand_id, "applications_deleted": len(app_ids)})
         s.delete(cand)
         s.commit()
         flash(f"Portal user {name} and all associated data deleted", "success")
