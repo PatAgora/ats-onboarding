@@ -2350,27 +2350,35 @@ def admin_portal_user_update(cand_id: int):
 @login_required
 @app.route("/admin/portal-users/<int:cand_id>/delete", methods=["POST"])
 def admin_portal_user_delete(cand_id: int):
-    """Delete a portal user — blocked if they have applications."""
+    """Delete a portal user and all associated data."""
     with Session(engine) as s:
         cand = s.get(Candidate, cand_id)
         if not cand:
             flash("Associate not found", "danger")
             return redirect(url_for("admin_portal_users"))
 
-        # Block deletion if candidate has applications
-        app_count = s.scalar(
-            select(func.count()).select_from(Application).where(Application.candidate_id == cand_id)
-        ) or 0
-        if app_count > 0:
-            flash(f"Cannot delete {cand.name} — they have {app_count} application(s). Remove applications first.", "danger")
-            return redirect(url_for("admin_portal_user_detail", cand_id=cand_id))
-
         name = cand.name
+
+        # Clean up all related records
+        app_ids = [aid for (aid,) in s.execute(
+            select(Application.id).where(Application.candidate_id == cand_id)
+        ).all()]
+        if app_ids:
+            s.execute(delete(ESigRequest).where(ESigRequest.application_id.in_(app_ids)))
+            try:
+                s.execute(delete(TrustIDCheck).where(TrustIDCheck.application_id.in_(app_ids)))
+            except Exception:
+                pass
+            s.execute(delete(Application).where(Application.id.in_(app_ids)))
+        s.execute(delete(VettingCheck).where(VettingCheck.candidate_id == cand_id))
+        s.execute(delete(Shortlist).where(Shortlist.candidate_id == cand_id))
+        s.execute(delete(CandidateTag).where(CandidateTag.candidate_id == cand_id))
+
         log_audit_event('delete', 'data_access', f'Deleted portal user: {name} (id={cand_id})',
-                        extra_data={"candidate_id": cand_id})
+                        extra_data={"candidate_id": cand_id, "applications_deleted": len(app_ids)})
         s.delete(cand)
         s.commit()
-        flash(f"Portal user {name} deleted", "success")
+        flash(f"Portal user {name} and all associated data deleted", "success")
 
     return redirect(url_for("admin_portal_users"))
 
