@@ -250,10 +250,23 @@ def system_db_check():
         portal_cands = s.execute(text("SELECT COUNT(*) FROM candidates WHERE source = 'associate-portal'")).scalar()
         total_apps = s.execute(text("SELECT COUNT(*) FROM applications")).scalar()
         pipeline_apps = s.execute(text("SELECT COUNT(*) FROM applications WHERE status = 'Pipeline'")).scalar()
+        # Search for any candidate with 'stones' or 'patrick' in name
+        search_rows = s.execute(text(
+            "SELECT id, name, email, source, created_at FROM candidates WHERE LOWER(name) LIKE '%stones%' OR LOWER(name) LIKE '%patrick%' OR LOWER(email) LIKE '%patrick%' ORDER BY created_at DESC LIMIT 10"
+        )).all()
         # Find portal candidates
         portal_rows = s.execute(text(
             "SELECT id, name, email, source, created_at FROM candidates WHERE source = 'associate-portal' ORDER BY created_at DESC LIMIT 10"
         )).all()
+        # Check associate_profiles table
+        assoc_profiles = []
+        try:
+            assoc_profiles = [
+                {"id": r[0], "candidate_id": r[1], "created_at": str(r[2])}
+                for r in s.execute(text("SELECT id, candidate_id, created_at FROM associate_profiles ORDER BY created_at DESC LIMIT 10")).all()
+            ]
+        except Exception:
+            assoc_profiles = "table not found"
         # Find recent applications
         recent_apps = s.execute(text(
             "SELECT a.id, a.candidate_id, a.job_id, a.status, a.created_at, c.name "
@@ -265,6 +278,10 @@ def system_db_check():
             "portal_candidates": portal_cands,
             "total_applications": total_apps,
             "pipeline_applications": pipeline_apps,
+            "search_patrick_stones": [
+                {"id": r[0], "name": r[1], "email": r[2], "source": r[3], "created_at": str(r[4])} for r in search_rows
+            ],
+            "associate_profiles": assoc_profiles,
             "portal_users": [
                 {"id": r[0], "name": r[1], "email": r[2], "source": r[3], "created_at": str(r[4])} for r in portal_rows
             ],
