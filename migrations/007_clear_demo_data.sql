@@ -62,4 +62,8 @@ DELETE FROM timesheet_entries;
 DELETE FROM timesheets;
 DELETE FROM timesheet_configs;
 
+-- 13. Remove all demo users except admin@demo.example.com
+DELETE FROM password_history WHERE user_id IN (SELECT id FROM users WHERE email != 'admin@demo.example.com');
+DELETE FROM users WHERE email != 'admin@demo.example.com';
+
 COMMIT;

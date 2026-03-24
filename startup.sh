@@ -61,55 +61,93 @@ PYEOF
     fi
 }
 
-# Auto-seed demo data if database is empty
+# Demo seed DISABLED — real users are managed manually
 echo ""
-echo "Checking if database needs seeding..."
-python3 -c "
-from app import engine
-from sqlalchemy import text
-from sqlalchemy.orm import Session
-with Session(engine) as s:
-    try:
-        count = s.execute(text('SELECT COUNT(*) FROM users')).scalar()
-        if count == 0:
-            print('Database empty — running seed_demo.py...')
-            import seed_demo
-            seed_demo.seed()
-        else:
-            print(f'Database has {count} users — skipping seed.')
-    except Exception as e:
-        print(f'Seed check: {e} — running seed anyway...')
-        try:
-            import seed_demo
-            seed_demo.seed()
-        except Exception as e2:
-            print(f'Seed failed: {e2} — continuing without seed data.')
-" 2>&1
+echo "Demo auto-seed is disabled."
 
-# One-time demo data cleanup (preserves users + associate profiles)
+# One-time demo data cleanup (preserves admin@demo.example.com + associate profiles)
 echo ""
-echo "Checking if demo data cleanup is needed..."
-python3 -c "
-from app import engine
-from sqlalchemy import text
-from sqlalchemy.orm import Session
-with Session(engine) as s:
-    try:
-        apps = s.execute(text('SELECT COUNT(*) FROM applications')).scalar()
-        if apps > 0:
-            print(f'Found {apps} demo applications — running cleanup...')
-            with open('migrations/007_clear_demo_data.sql', 'r') as f:
-                sql = f.read()
-            s.execute(text(sql))
-            s.commit()
-            remaining = s.execute(text('SELECT COUNT(*) FROM users')).scalar()
-            profiles = s.execute(text('SELECT COUNT(*) FROM associate_profiles')).scalar()
-            print(f'Cleanup complete. Preserved {remaining} users, {profiles} associate profiles.')
-        else:
-            print('No demo data to clean — skipping.')
-    except Exception as e:
-        print(f'Demo cleanup check: {e} — skipping.')
-" 2>&1
+echo "Running demo data cleanup..."
+python3 << 'CLEANEOF'
+import os, psycopg2
+
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if not DATABASE_URL:
+    print("No DATABASE_URL — skipping cleanup.")
+    exit(0)
+
+try:
+    conn = psycopg2.connect(DATABASE_URL)
+    conn.autocommit = False
+    cur = conn.cursor()
+
+    # Check if cleanup is needed — skip if already clean
+    cur.execute("SELECT COUNT(*) FROM applications")
+    apps = cur.fetchone()[0]
+    cur.execute("SELECT COUNT(*) FROM users WHERE email != 'admin@demo.example.com'")
+    demo_users = cur.fetchone()[0]
+
+    if apps == 0 and demo_users == 0:
+        print("Already clean — skipping.")
+        conn.close()
+        exit(0)
+
+    print(f"Cleaning: {apps} applications, {demo_users} demo users to remove...")
+
+    # Delete all transactional demo data in FK-safe order
+    cleanup_statements = [
+        "DELETE FROM webhook_events",
+        "DELETE FROM audit_logs",
+        "DELETE FROM trustid_checks",
+        "DELETE FROM esign_requests",
+        "DELETE FROM shortlists",
+        "DELETE FROM applications",
+        "DELETE FROM invoices",
+        "DELETE FROM jobs",
+        "DELETE FROM engagement_plans",
+        "DELETE FROM engagements",
+        "DELETE FROM opportunities",
+        "DELETE FROM candidate_notes",
+        "DELETE FROM candidate_tags",
+        "DELETE FROM documents",
+        "DELETE FROM vetting_check",
+        "DELETE FROM reference_requests",
+        "DELETE FROM reference_contacts",
+        "DELETE FROM employment_history",
+        "DELETE FROM address_history",
+        "DELETE FROM qualification_records",
+        "DELETE FROM declaration_records",
+        "DELETE FROM consent_records",
+        "DELETE FROM company_details",
+        "DELETE FROM candidates WHERE id NOT IN (SELECT candidate_id FROM associate_profiles)",
+        "DELETE FROM timesheet_expenses",
+        "DELETE FROM timesheet_entries",
+        "DELETE FROM timesheets",
+        "DELETE FROM timesheet_configs",
+        "DELETE FROM password_history WHERE user_id IN (SELECT id FROM users WHERE email != 'admin@demo.example.com')",
+        "DELETE FROM users WHERE email != 'admin@demo.example.com'",
+    ]
+
+    for stmt in cleanup_statements:
+        cur.execute(stmt)
+
+    conn.commit()
+
+    cur.execute("SELECT id, email, role FROM users ORDER BY id")
+    rows = cur.fetchall()
+    print(f"Cleanup complete. Remaining users:")
+    for r in rows:
+        print(f"  ID {r[0]}: {r[1]} ({r[2]})")
+
+    cur.execute("SELECT COUNT(*) FROM associate_profiles")
+    profiles = cur.fetchone()[0]
+    print(f"Associate profiles preserved: {profiles}")
+
+    conn.close()
+
+except Exception as e:
+    print(f"Demo cleanup error: {e} — skipping.")
+CLEANEOF
 
 # Start application with gunicorn
 echo ""
