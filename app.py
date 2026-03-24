@@ -5815,10 +5815,10 @@ def index():
             planned_daily_rev = sum((p.charge_rate or 0) * (p.planned_count or 0) for p in plans)
             eng_start = eng.start_date or now.date()
             eng_end = eng.end_date or now.date()
-            if hasattr(eng_start, 'date'):
-                eng_start = eng_start
-            if hasattr(eng_end, 'date'):
-                eng_end = eng_end
+            if hasattr(eng_start, 'date') and callable(eng_start.date):
+                eng_start = eng_start.date()
+            if hasattr(eng_end, 'date') and callable(eng_end.date):
+                eng_end = eng_end.date()
             delta = max(1, (eng_end - eng_start).days) if eng_end >= eng_start else 20
             working_days = max(1, int(delta * 5 / 7))
             dashboard_forecast_revenue += planned_daily_rev * working_days

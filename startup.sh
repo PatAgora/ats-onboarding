@@ -95,89 +95,9 @@ except Exception as e:
     print(f"Admin check error: {e}")
 ADMINEOF
 
-# One-time demo data cleanup (preserves admin@demo.example.com + associate profiles)
+# Demo data cleanup REMOVED — production database must never be wiped on deploy
 echo ""
-echo "Running demo data cleanup..."
-python3 << 'CLEANEOF'
-import os, psycopg2
-
-DATABASE_URL = os.environ.get('DATABASE_URL')
-if not DATABASE_URL:
-    print("No DATABASE_URL — skipping cleanup.")
-    exit(0)
-
-try:
-    conn = psycopg2.connect(DATABASE_URL)
-    conn.autocommit = False
-    cur = conn.cursor()
-
-    # Check if cleanup is needed — skip if already clean
-    cur.execute("SELECT COUNT(*) FROM applications")
-    apps = cur.fetchone()[0]
-    cur.execute("SELECT COUNT(*) FROM users WHERE email != 'admin@demo.example.com'")
-    demo_users = cur.fetchone()[0]
-
-    if apps == 0 and demo_users == 0:
-        print("Already clean — skipping.")
-        conn.close()
-        exit(0)
-
-    print(f"Cleaning: {apps} applications, {demo_users} demo users to remove...")
-
-    # Delete all transactional demo data in FK-safe order
-    cleanup_statements = [
-        "DELETE FROM webhook_events",
-        "DELETE FROM audit_logs",
-        "DELETE FROM trustid_checks",
-        "DELETE FROM esign_requests",
-        "DELETE FROM shortlists",
-        "DELETE FROM applications",
-        "DELETE FROM invoices",
-        "DELETE FROM jobs",
-        "DELETE FROM engagement_plans",
-        "DELETE FROM engagements",
-        "DELETE FROM opportunities",
-        "DELETE FROM candidate_notes",
-        "DELETE FROM candidate_tags",
-        "DELETE FROM documents",
-        "DELETE FROM vetting_check",
-        "DELETE FROM reference_requests",
-        "DELETE FROM reference_contacts",
-        "DELETE FROM employment_history",
-        "DELETE FROM address_history",
-        "DELETE FROM qualification_records",
-        "DELETE FROM declaration_records",
-        "DELETE FROM consent_records",
-        "DELETE FROM company_details",
-        "DELETE FROM candidates WHERE id NOT IN (SELECT candidate_id FROM associate_profiles)",
-        "DELETE FROM timesheet_expenses",
-        "DELETE FROM timesheet_entries",
-        "DELETE FROM timesheets",
-        "DELETE FROM timesheet_configs",
-        "DELETE FROM password_history WHERE user_id IN (SELECT id FROM users WHERE email != 'admin@demo.example.com')",
-        "DELETE FROM users WHERE email != 'admin@demo.example.com'",
-    ]
-
-    for stmt in cleanup_statements:
-        cur.execute(stmt)
-
-    conn.commit()
-
-    cur.execute("SELECT id, email, role FROM users ORDER BY id")
-    rows = cur.fetchall()
-    print(f"Cleanup complete. Remaining users:")
-    for r in rows:
-        print(f"  ID {r[0]}: {r[1]} ({r[2]})")
-
-    cur.execute("SELECT COUNT(*) FROM associate_profiles")
-    profiles = cur.fetchone()[0]
-    print(f"Associate profiles preserved: {profiles}")
-
-    conn.close()
-
-except Exception as e:
-    print(f"Demo cleanup error: {e} — skipping.")
-CLEANEOF
+echo "Skipping demo data cleanup (production safety)."
 
 # Seed associate profiles if candidates table is empty
 echo ""
