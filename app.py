@@ -4219,36 +4219,24 @@ def ensure_schema():
             user_count = conn.execute(text("SELECT COUNT(*) FROM users")).scalar() or 0
             if user_count == 0:
                 from werkzeug.security import generate_password_hash
-                import secrets
-                
-                # Generate a secure default password
-                default_password = secrets.token_urlsafe(16)
-                password_hash_value = generate_password_hash(default_password, method='pbkdf2:sha256')
-                
-                # Create admin user
+
+                password_hash_value = generate_password_hash("DemoAdmin2024!", method='pbkdf2:sha256')
+
                 conn.execute(
                     text("""
                         INSERT INTO users (name, email, password_hash, role, is_active, created_at)
                         VALUES (:name, :email, :password_hash, :role, :is_active, CURRENT_TIMESTAMP)
                     """),
                     {
-                        "name": "Admin",
-                        "email": "admin@example.com",
+                        "name": "Admin User",
+                        "email": "admin@demo.example.com",
                         "password_hash": password_hash_value,
-                        "role": "super_admin",
+                        "role": "admin",
                         "is_active": 1
                     }
                 )
-                
-                # Log the credentials (WARNING: In production, send this via secure channel)
-                print("\n" + "="*80)
-                print("🔐 ADMIN USER CREATED")
-                print("="*80)
-                print(f"Email: admin@example.com")
-                print(f"Password: {default_password}")
-                print("="*80)
-                print("⚠️  IMPORTANT: Change this password immediately after first login!")
-                print("="*80 + "\n")
+
+                print("Admin user created: admin@demo.example.com")
         except Exception as e:
             print(f"Warning: Could not seed admin user: {e}")
 
