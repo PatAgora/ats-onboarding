@@ -153,9 +153,12 @@ ALLOWED_EXTENSIONS = {"pdf", "doc", "docx"}
 ROLE_TYPES = [
     "Project Director",
     "Project Manager",
+    "Project Lead",
     "Ops Manager",
     "Team Leader",
+    "Team Lead",
     "Case Handler",
+    "Officers",
     "Admin",
 ]
 
@@ -3873,8 +3876,8 @@ def ensure_schema():
             existing = conn.execute(text("SELECT COUNT(1) FROM taxonomy_categories")).scalar() or 0
             if existing == 0:
                 role_names = [
-                    'Project Director','Project Manager','Ops Manager',
-                    'Team Leader','Case Handler','Admin'
+                    'Project Director','Project Manager','Project Lead','Ops Manager',
+                    'Team Leader','Team Lead','Case Handler','Officers','Admin'
                 ]
                 for rn in role_names:
                     conn.execute(
@@ -3937,6 +3940,13 @@ def ensure_schema():
                     ("Case Handler",     "investigator"),
                     ("Admin",            "administrator"),
                     ("Admin",            "office admin"),
+                    ("Project Lead",     "project leader"),
+                    ("Project Lead",     "delivery lead"),
+                    ("Team Lead",        "tl"),
+                    ("Team Lead",        "shift lead"),
+                    ("Officers",         "compliance officer"),
+                    ("Officers",         "risk officer"),
+                    ("Officers",         "mlro"),
                 ]
                 for canon, alias in seeds:
                     conn.execute(
