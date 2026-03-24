@@ -6398,23 +6398,27 @@ def opportunities_():
 @app.route("/admin/roles", methods=["GET", "POST"])
 def admin_roles():
     form = RoleTypeForm()
-    with Session(engine) as s:
-        if form.validate_on_submit():
-            rt = RoleType(
-                name=form.name.data.strip(),
-                default_rate=int(form.default_rate.data or 0),
-            )
-            try:
-                s.add(rt)
-                s.commit()
-                flash("Role added", "success")
-            except IntegrityError:
-                s.rollback()
-                flash("That role already exists", "warning")
+    try:
+        with Session(engine) as s:
+            if form.validate_on_submit():
+                rt = RoleType(
+                    name=form.name.data.strip(),
+                    default_rate=int(form.default_rate.data or 0),
+                )
+                try:
+                    s.add(rt)
+                    s.commit()
+                    flash("Role added", "success")
+                except IntegrityError:
+                    s.rollback()
+                    flash("That role already exists", "warning")
 
-        roles = s.scalars(
-            select(RoleType).order_by(RoleType.name.asc())
-        ).all()
+            roles = s.scalars(
+                select(RoleType).order_by(RoleType.name.asc())
+            ).all()
+    except Exception as e:
+        current_app.logger.exception("admin_roles error: %s", e)
+        roles = []
 
     return render_template("config_roles.html", form=form, roles=roles)
 
@@ -8835,7 +8839,7 @@ def job_new():
             return redirect(url_for("engagement_dashboard", engagement_id=engagement_id or 1))
 
         # GET request
-        roles = s.scalars(select(Role).order_by(Role.name.asc())).all() if "Role" in globals() else []
+        roles = s.scalars(select(RoleType).order_by(RoleType.name.asc())).all()
         return render_template("job_form.html", job=None, roles=roles, mode="create")
 
 
@@ -8859,7 +8863,7 @@ def job_edit(job_id):
             flash("Job updated successfully.", "success")
             return redirect(url_for("engagement_dashboard", engagement_id=job.engagement_id or 1))
 
-        roles = s.scalars(select(Role).order_by(Role.name.asc())).all() if "Role" in globals() else []
+        roles = s.scalars(select(RoleType).order_by(RoleType.name.asc())).all()
         return render_template("job_form.html", job=job, roles=roles, mode="edit")
 
 @app.route("/apply/<token>", methods=["GET", "POST"])
@@ -15189,29 +15193,32 @@ def action_request_updated_cv_candidate(cand_id):
 @app.route("/configuration", methods=["GET"])
 def configuration():
     alias_form = RoleAliasForm()
-    with Session(engine) as s:
-        # role aliases (table may not exist yet)
-        try:
-            aliases = s.execute(text("SELECT id, canonical, alias FROM role_aliases ORDER BY canonical, alias")).all()
-        except Exception:
-            s.rollback()
-            aliases = []
-        # taxonomy data
-        cat_rows = s.scalars(
-            select(TaxonomyCategory)
-            .options(selectinload(TaxonomyCategory.tags))
-            .order_by(TaxonomyCategory.type.asc(), TaxonomyCategory.name.asc())
-        ).all()
-        # Convert to plain dicts so template works after session closes
-        cats = []
-        tags_by_cat = {}
-        for c in cat_rows:
-            tag_list = sorted(
-                [{"tag": t.tag, "id": t.id} for t in c.tags],
-                key=lambda t: (t["tag"] or "").lower()
-            )
-            cats.append({"id": c.id, "name": c.name, "type": c.type, "tags": tag_list})
-            tags_by_cat[c.id] = tag_list
+    aliases = []
+    cats = []
+    tags_by_cat = {}
+    try:
+        with Session(engine) as s:
+            # role aliases (table may not exist yet)
+            try:
+                aliases = s.execute(text("SELECT id, canonical, alias FROM role_aliases ORDER BY canonical, alias")).all()
+            except Exception:
+                s.rollback()
+                aliases = []
+            # taxonomy data
+            cat_rows = s.scalars(
+                select(TaxonomyCategory)
+                .options(selectinload(TaxonomyCategory.tags))
+                .order_by(TaxonomyCategory.type.asc(), TaxonomyCategory.name.asc())
+            ).all()
+            for c in cat_rows:
+                tag_list = sorted(
+                    [{"tag": t.tag, "id": t.id} for t in c.tags],
+                    key=lambda t: (t["tag"] or "").lower()
+                )
+                cats.append({"id": c.id, "name": c.name, "type": c.type, "tags": tag_list})
+                tags_by_cat[c.id] = tag_list
+    except Exception as e:
+        current_app.logger.exception("configuration error: %s", e)
     return render_template("configuration.html",
                            alias_form=alias_form,
                            aliases=aliases,
