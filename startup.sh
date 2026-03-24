@@ -86,6 +86,31 @@ with Session(engine) as s:
             print(f'Seed failed: {e2} — continuing without seed data.')
 " 2>&1
 
+# One-time demo data cleanup (preserves users + associate profiles)
+echo ""
+echo "Checking if demo data cleanup is needed..."
+python3 -c "
+from app import engine
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+with Session(engine) as s:
+    try:
+        apps = s.execute(text('SELECT COUNT(*) FROM applications')).scalar()
+        if apps > 0:
+            print(f'Found {apps} demo applications — running cleanup...')
+            with open('migrations/007_clear_demo_data.sql', 'r') as f:
+                sql = f.read()
+            s.execute(text(sql))
+            s.commit()
+            remaining = s.execute(text('SELECT COUNT(*) FROM users')).scalar()
+            profiles = s.execute(text('SELECT COUNT(*) FROM associate_profiles')).scalar()
+            print(f'Cleanup complete. Preserved {remaining} users, {profiles} associate profiles.')
+        else:
+            print('No demo data to clean — skipping.')
+    except Exception as e:
+        print(f'Demo cleanup check: {e} — skipping.')
+" 2>&1
+
 # Start application with gunicorn
 echo ""
 echo "Starting gunicorn..."
