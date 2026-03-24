@@ -179,6 +179,26 @@ except Exception as e:
     print(f"Demo cleanup error: {e} — skipping.")
 CLEANEOF
 
+# Seed associate profiles if candidates table is empty
+echo ""
+echo "Checking if associate seed is needed..."
+python3 -c "
+from app import engine
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+with Session(engine) as s:
+    try:
+        ccount = s.execute(text('SELECT COUNT(*) FROM candidates')).scalar()
+        if ccount == 0:
+            print('No candidates found — running associate seed...')
+            import seed_associates
+            seed_associates.seed_associates()
+        else:
+            print(f'Database has {ccount} candidates — skipping associate seed.')
+    except Exception as e:
+        print(f'Associate seed check: {e}')
+" 2>&1
+
 # Start application with gunicorn
 echo ""
 echo "Starting gunicorn..."
