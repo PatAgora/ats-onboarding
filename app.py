@@ -4214,32 +4214,6 @@ def ensure_schema():
             except Exception:
                 pass
 
-        # ===== Seed admin user if no users exist =====
-        try:
-            user_count = conn.execute(text("SELECT COUNT(*) FROM users")).scalar() or 0
-            if user_count == 0:
-                from werkzeug.security import generate_password_hash
-
-                password_hash_value = generate_password_hash("DemoAdmin2024!", method='pbkdf2:sha256')
-
-                conn.execute(
-                    text("""
-                        INSERT INTO users (name, email, password_hash, role, is_active, created_at)
-                        VALUES (:name, :email, :password_hash, :role, :is_active, CURRENT_TIMESTAMP)
-                    """),
-                    {
-                        "name": "Admin User",
-                        "email": "admin@demo.example.com",
-                        "password_hash": password_hash_value,
-                        "role": "admin",
-                        "is_active": 1
-                    }
-                )
-
-                print("Admin user created: admin@demo.example.com")
-        except Exception as e:
-            print(f"Warning: Could not seed admin user: {e}")
-
 # Create all model-defined tables FIRST (full schemas from SQLAlchemy models),
 # THEN run ensure_schema() for backwards-compat patches on pre-existing DBs.
 Base.metadata.create_all(engine)
@@ -4250,6 +4224,34 @@ except Exception as e:
     print("⚠️  App will continue but some features may not work correctly")
     import traceback
     traceback.print_exc()
+
+# ===== Seed admin user if no users exist (separate connection to avoid transaction issues) =====
+try:
+    with engine.begin() as conn:
+        user_count = conn.execute(text("SELECT COUNT(*) FROM users")).scalar() or 0
+        if user_count == 0:
+            from werkzeug.security import generate_password_hash
+
+            password_hash_value = generate_password_hash("DemoAdmin2024!", method='pbkdf2:sha256')
+
+            conn.execute(
+                text("""
+                    INSERT INTO users (name, email, password_hash, role, is_active, created_at)
+                    VALUES (:name, :email, :password_hash, :role, :is_active, CURRENT_TIMESTAMP)
+                """),
+                {
+                    "name": "Admin User",
+                    "email": "admin@demo.example.com",
+                    "password_hash": password_hash_value,
+                    "role": "admin",
+                    "is_active": 1
+                }
+            )
+            print("Admin user created: admin@demo.example.com")
+        else:
+            print(f"Users table has {user_count} users — skipping admin seed.")
+except Exception as e:
+    print(f"Warning: Could not seed admin user: {e}")
 
 # ---------- Taxonomy tagging helpers ----------
 WORD = r"[A-Za-z][A-Za-z\-/&\.\(\) ]+[A-Za-z]"
