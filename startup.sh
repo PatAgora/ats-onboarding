@@ -61,9 +61,39 @@ PYEOF
     fi
 }
 
-# Demo seed DISABLED — real users are managed manually
+# Ensure admin user exists (does NOT overwrite if already present)
 echo ""
-echo "Demo auto-seed is disabled."
+echo "Ensuring admin user exists..."
+python3 << 'ADMINEOF'
+import os, psycopg2
+from werkzeug.security import generate_password_hash
+
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if not DATABASE_URL:
+    print("No DATABASE_URL — skipping.")
+    exit(0)
+
+try:
+    conn = psycopg2.connect(DATABASE_URL)
+    conn.autocommit = False
+    cur = conn.cursor()
+
+    cur.execute("SELECT id FROM users WHERE email = 'admin@demo.example.com'")
+    if cur.fetchone():
+        print("Admin user already exists — skipping.")
+    else:
+        pw_hash = generate_password_hash("DemoAdmin2024!", method="pbkdf2:sha256")
+        cur.execute(
+            "INSERT INTO users (name, email, password_hash, role, is_active) VALUES (%s, %s, %s, %s, %s)",
+            ("Admin User", "admin@demo.example.com", pw_hash, "admin", True)
+        )
+        conn.commit()
+        print("Admin user created: admin@demo.example.com / DemoAdmin2024!")
+
+    conn.close()
+except Exception as e:
+    print(f"Admin check error: {e}")
+ADMINEOF
 
 # One-time demo data cleanup (preserves admin@demo.example.com + associate profiles)
 echo ""
