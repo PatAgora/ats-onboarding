@@ -4225,8 +4225,26 @@ except Exception as e:
     import traceback
     traceback.print_exc()
 
-# ===== Seed admin user if no users exist (separate connection to avoid transaction issues) =====
+# ===== Fix stale users table + seed admin if empty (separate connection) =====
 try:
+    with engine.begin() as conn:
+        # Check if users table has the required columns — if not, drop and let create_all rebuild
+        cols = [r[0] for r in conn.execute(text(
+            "SELECT column_name FROM information_schema.columns WHERE table_name = 'users'"
+        )).fetchall()]
+
+        if 'role' not in cols or 'is_active' not in cols:
+            user_count = conn.execute(text("SELECT COUNT(*) FROM users")).scalar() or 0
+            if user_count == 0:
+                print("Users table has stale schema and 0 rows — recreating...")
+                conn.execute(text("DROP TABLE IF EXISTS password_history"))
+                conn.execute(text("DROP TABLE IF EXISTS users"))
+            else:
+                print(f"Users table has stale schema but {user_count} rows — skipping drop.")
+
+    # Rebuild any dropped tables with full schema
+    Base.metadata.create_all(engine)
+
     with engine.begin() as conn:
         user_count = conn.execute(text("SELECT COUNT(*) FROM users")).scalar() or 0
         if user_count == 0:
@@ -4236,15 +4254,15 @@ try:
 
             conn.execute(
                 text("""
-                    INSERT INTO users (name, email, password_hash, role, is_active, created_at)
-                    VALUES (:name, :email, :password_hash, :role, :is_active, CURRENT_TIMESTAMP)
+                    INSERT INTO users (name, email, pw_hash, role, is_active, created_at)
+                    VALUES (:name, :email, :pw_hash, :role, :is_active, CURRENT_TIMESTAMP)
                 """),
                 {
                     "name": "Admin User",
                     "email": "admin@demo.example.com",
-                    "password_hash": password_hash_value,
+                    "pw_hash": password_hash_value,
                     "role": "admin",
-                    "is_active": 1
+                    "is_active": True
                 }
             )
             print("Admin user created: admin@demo.example.com")
@@ -4252,6 +4270,8 @@ try:
             print(f"Users table has {user_count} users — skipping admin seed.")
 except Exception as e:
     print(f"Warning: Could not seed admin user: {e}")
+    import traceback
+    traceback.print_exc()
 
 # ---------- Taxonomy tagging helpers ----------
 WORD = r"[A-Za-z][A-Za-z\-/&\.\(\) ]+[A-Za-z]"
